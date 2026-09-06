@@ -89,13 +89,24 @@ public class Joc {
         return false;
     }
 
-    public void muta(int dir) {
+    
+public void actualizeaza(float dt) {
         if (terminat) return;
-        if (!ciocnire(pieseX + dir, pieseY, rotatie)) {
-            pieseX += dir;
+
+        ceas += dt;
+        alunecare = -(ceas / vitezaCadere);
+        if (alunecare < -1f) alunecare = -1f;
+
+        if (ceas >= vitezaCadere) {
+            ceas = 0f;
+            alunecare = 0f;
+            if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+                pieseY--;
+            } else {
+                aseaza();
+            }
         }
     }
-
     public void roteste() {
         if (terminat) return;
         int nou = (rotatie + 1) % 4;
