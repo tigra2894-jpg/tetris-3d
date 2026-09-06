@@ -87,7 +87,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         float latTabla = Joc.COLOANE;
         float inaltTabla = Joc.RANDURI;
         float offX = -latTabla / 2f + 0.5f;
-        float offY = -inaltTabla / 2f + 0.5f;
+        float offY = -inaltTabla / 2f + 1f;
 
         for (int r = 0; r < Joc.RANDURI; r++) {
             deseneaza(offX - 1f, offY + r, -0.5f, 0.16f, 0.18f, 0.28f, 0.55f, 1f);
