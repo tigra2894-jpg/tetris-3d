@@ -41,11 +41,16 @@ public class Joc {
     public int linii = 0;
     public int nivel = 1;
 
+    public int pieseAsezate = 0;
+    public int tetrisuriFacute = 0;
+
     public boolean terminat = false;
-    public boolean pauza = false;
 
     public Particule particule;
     public Sunet sunet;
+
+    /** viteza de start, ceruta din Setari; 0.75 implicit */
+    public float vitezaInitiala = 0.75f;
 
     private final Random rnd = new Random();
     private float ceas = 0f;
@@ -80,10 +85,12 @@ public class Joc {
             for (int c = 0; c < COLOANE; c++)
                 tabla[r][c] = 0;
         for (int r = 0; r < RANDURI; r++) tremurRand[r] = 0f;
+
         scor = 0; linii = 0; nivel = 1;
-        vitezaCadere = 0.75f;
+        pieseAsezate = 0;
+        tetrisuriFacute = 0;
+        vitezaCadere = vitezaInitiala;
         terminat = false;
-        pauza = false;
         cutremurGlobal = 0f;
         tipUrmator = rnd.nextInt(7);
         pieseNoua();
@@ -105,12 +112,8 @@ public class Joc {
         return false;
     }
 
-    private boolean activ() {
-        return !terminat && !pauza;
-    }
-
     public void muta(int dir) {
-        if (!activ()) return;
+        if (terminat) return;
         if (!ciocnire(pieseX + dir, pieseY, rotatie)) {
             pieseX += dir;
             if (sunet != null) sunet.mutare();
@@ -118,7 +121,7 @@ public class Joc {
     }
 
     public void roteste() {
-        if (!activ()) return;
+        if (terminat) return;
         int nou = (rotatie + 1) % 4;
         boolean reusit = false;
 
@@ -131,7 +134,7 @@ public class Joc {
     }
 
     public void coboaraRapid() {
-        if (!activ()) return;
+        if (terminat) return;
         if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
             pieseY--;
             ceas = 0f;
@@ -141,7 +144,7 @@ public class Joc {
     }
 
     public void trantesteJos() {
-        if (!activ()) return;
+        if (terminat) return;
         while (!ciocnire(pieseX, pieseY - 1, rotatie)) pieseY--;
         alunecare = 0f;
         ceas = 0f;
@@ -189,6 +192,7 @@ public class Joc {
                 if (y > 0) tremurRand[y - 1] = 0.7f;
             }
         }
+        pieseAsezate++;
         if (cuSunet && sunet != null) sunet.aterizare();
         verificaLinii();
         pieseNoua();
@@ -220,7 +224,10 @@ public class Joc {
                 case 1: scor += 100 * nivel; break;
                 case 2: scor += 300 * nivel; break;
                 case 3: scor += 500 * nivel; break;
-                default: scor += 800 * nivel; break;
+                default:
+                    scor += 800 * nivel;
+                    tetrisuriFacute++;
+                    break;
             }
 
             if (sunet != null) {
@@ -230,22 +237,18 @@ public class Joc {
 
             if (scor > record) record = scor;
             nivel = 1 + linii / 10;
-            vitezaCadere = Math.max(0.09f, 0.75f - (nivel - 1) * 0.06f);
+            vitezaCadere = Math.max(0.09f, vitezaInitiala - (nivel - 1) * 0.06f);
             cutremurGlobal = Math.min(1f, cutremurGlobal + 0.5f * sterse);
 
             if (nivel > nivelVechi && sunet != null) sunet.nivel();
         }
     }
 
+    /** actualizarea normala, cand jocul e activ */
     public void actualizeaza(float dt) {
-        for (int r = 0; r < RANDURI; r++) {
-            tremurRand[r] -= dt * 2.2f;
-            if (tremurRand[r] < 0f) tremurRand[r] = 0f;
-        }
-        cutremurGlobal -= dt * 2.6f;
-        if (cutremurGlobal < 0f) cutremurGlobal = 0f;
+        stingeEfecte(dt);
 
-        if (!activ()) return;
+        if (terminat) return;
 
         ceas += dt;
 
@@ -266,4 +269,15 @@ public class Joc {
             }
         }
     }
+
+    /** doar stinge tremurul si cutremurul, fara sa miste piesa.
+     *  folosit in pauza si la ecranul final. */
+    public void stingeEfecte(float dt) {
+        for (int r = 0; r < RANDURI; r++) {
+            tremurRand[r] -= dt * 2.2f;
+            if (tremurRand[r] < 0f) tremurRand[r] = 0f;
+        }
+        cutremurGlobal -= dt * 2.6f;
+        if (cutremurGlobal < 0f) cutremurGlobal = 0f;
     }
+}
