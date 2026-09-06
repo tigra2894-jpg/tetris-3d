@@ -11,6 +11,8 @@ import javax.microedition.khronos.opengles.GL10;
 public class GameRenderer implements GLSurfaceView.Renderer {
 
     public Joc joc;
+    public Sunet sunet;
+
     private Cub cub;
     private Particule particule;
     private Stele stele;
@@ -38,15 +40,15 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     };
 
     private float offX, offY;
-
-    // zonele apasabile, in coordonate de ecran (0..1)
     public float latEcran = 1f, inaltEcran = 1f;
 
     public GameRenderer(Context context) {
+        sunet = new Sunet();
         joc = new Joc();
         particule = new Particule();
         stele = new Stele();
         joc.particule = particule;
+        joc.sunet = sunet;
     }
 
     @Override
@@ -88,7 +90,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         leganare += dt * 0.28f;
         timpTotal += dt;
 
-        // cutremur pe camera
         float scut = joc.cutremurGlobal;
         float zgX = (float) Math.sin(timpTotal * 47f) * scut * 0.42f;
         float zgY = (float) Math.cos(timpTotal * 39f) * scut * 0.32f;
@@ -125,7 +126,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         deseneazaInterfata();
         deseneazaButonPauza();
 
-        if (joc.pauza)   ecranPauza();
+        if (joc.pauza)    ecranPauza();
         if (joc.terminat) ecranFinal();
     }
 
@@ -136,7 +137,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // podeaua se incinge sub coloanele unde va cadea piesa
     private void deseneazaPodea() {
         float ap = joc.terminat ? 0f : joc.apropiere();
 
@@ -156,7 +156,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // blocurile asezate; cele de sub piesa tremura si se lumineaza
     private void deseneazaBlocuri() {
         float ap = joc.terminat ? 0f : joc.apropiere();
 
@@ -168,7 +167,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
                 float[] cul = CULORI[val - 1];
 
                 float trem = joc.tremurRand[r] + joc.cutremurGlobal * 0.6f;
-                boolean simte = !joc.terminat && joc.coloanaTinta(c) && r <= joc.pozitieFantoma() + 1;
+                boolean simte = !joc.terminat && joc.coloanaTinta(c)
+                        && r <= joc.pozitieFantoma() + 1;
                 if (simte) trem += ap * 0.55f;
 
                 float dx = (float) Math.sin(timpTotal * 41f + r * 2.1f + c) * trem * 0.10f;
@@ -213,14 +213,12 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         float scMic = 0.17f;
         float scMare = 0.26f;
 
-        // stanga: SCOR + RECORD
         text("SCOR", offX - 0.8f, sus, scMic, 0.60f, 0.66f, 0.85f);
         deseneazaNumar(joc.scor, offX - 0.8f, sus - 1.15f, scMare, 1.0f, 0.92f, 0.50f);
 
         text("RECORD", offX - 0.8f, sus - 2.9f, scMic, 0.60f, 0.66f, 0.85f);
         deseneazaNumar(joc.record, offX - 0.8f, sus - 3.9f, scMic, 0.85f, 0.75f, 0.95f);
 
-        // dreapta: NIVEL + LINII
         float dr = offX + Joc.COLOANE - 2.6f;
         text("NIVEL", dr, sus, scMic, 0.60f, 0.66f, 0.85f);
         deseneazaNumar(joc.nivel, dr, sus - 1.15f, scMare, 0.45f, 0.95f, 1.0f);
@@ -229,22 +227,19 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         deseneazaNumar(joc.linii, dr, sus - 3.9f, scMic, 0.70f, 0.80f, 1.0f);
     }
 
-    // butonul de pauza: doua bare, sus in mijloc
     private void deseneazaButonPauza() {
         if (joc.terminat) return;
-        float x = 0f;
         float y = offY + Joc.RANDURI + 1.2f;
         float s = 0.24f;
 
         for (int i = 0; i < 3; i++) {
-            deseneaza(x - 0.3f, y - i * s, 0f, 0.75f, 0.82f, 1.0f, 0.85f, s);
-            deseneaza(x + 0.3f, y - i * s, 0f, 0.75f, 0.82f, 1.0f, 0.85f, s);
+            deseneaza(-0.3f, y - i * s, 0f, 0.75f, 0.82f, 1.0f, 0.85f, s);
+            deseneaza( 0.3f, y - i * s, 0f, 0.75f, 0.82f, 1.0f, 0.85f, s);
         }
     }
 
     private void ecranPauza() {
-        float s = 0.34f;
-        text("PAUZA", -2.4f, 2.0f, s, 1.0f, 0.95f, 0.60f);
+        text("PAUZA", -2.4f, 2.0f, 0.34f, 1.0f, 0.95f, 0.60f);
         text("ATINGE", -2.6f, -0.6f, 0.20f, 0.65f, 0.72f, 0.90f);
     }
 
@@ -257,7 +252,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         text("RECORD", -2.2f, -0.8f, 0.18f, 0.65f, 0.72f, 0.90f);
         deseneazaNumar(joc.record, -1.8f, -1.8f, 0.24f, 0.85f, 0.75f, 0.95f);
 
-        // butoane
         text("DIN NOU", -2.9f, -4.2f, 0.24f, 0.40f, 1.0f, 0.55f);
         text("IESIRE",  -2.4f, -7.0f, 0.24f, 1.0f, 0.45f, 0.45f);
     }
@@ -292,4 +286,4 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(mvp, 0, vizProiectie, 0, model, 0);
         cub.deseneaza(mvp, model, r, g, b, alfa);
     }
-}
+                        }
