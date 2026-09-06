@@ -13,6 +13,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     public Joc joc;
     private Cub cub;
     private Particule particule;
+    private Stele stele;
 
     private final float[] proiectie = new float[16];
     private final float[] camera = new float[16];
@@ -23,6 +24,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private long timpAnterior;
     private float rotatieFundal = 0f;
     private float puls = 0f;
+    private float leganare = 0f;
 
     private static final float[][] CULORI = {
             {0.15f, 0.85f, 0.95f},
@@ -39,12 +41,13 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     public GameRenderer(Context context) {
         joc = new Joc();
         particule = new Particule();
+        stele = new Stele();
         joc.particule = particule;
     }
 
     @Override
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        GLES20.glClearColor(0.04f, 0.05f, 0.10f, 1.0f);
+        GLES20.glClearColor(0.03f, 0.04f, 0.09f, 1.0f);
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glEnable(GLES20.GL_CULL_FACE);
         GLES20.glCullFace(GLES20.GL_BACK);
@@ -60,14 +63,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glViewport(0, 0, latime, inaltime);
 
         float raport = (float) latime / inaltime;
-        Matrix.perspectiveM(proiectie, 0, 52f, raport, 1f, 80f);
-
-        Matrix.setLookAtM(camera, 0,
-                0f, 2.0f, 30f,
-                0f, 0f, 0f,
-                0f, 1f, 0f);
-
-        Matrix.multiplyMM(vizProiectie, 0, proiectie, 0, camera, 0);
+        Matrix.perspectiveM(proiectie, 0, 46f, raport, 1f, 90f);
     }
 
     @Override
@@ -79,19 +75,34 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
         joc.actualizeaza(dt);
         particule.actualizeaza(dt);
+        stele.actualizeaza(dt);
         rotatieFundal += dt * 6f;
         puls += dt * 2.4f;
+        leganare += dt * 0.28f;
+
+        // camera: coborata si dusa lateral, se leagana foarte incet
+        float camX = 3.4f + (float) Math.sin(leganare) * 1.3f;
+        float camY = -2.6f + (float) Math.cos(leganare * 0.7f) * 0.8f;
+        float camZ = 30f;
+
+        Matrix.setLookAtM(camera, 0,
+                camX, camY, camZ,
+                0f, 0.5f, 0f,
+                0f, 1f, 0f);
+        Matrix.multiplyMM(vizProiectie, 0, proiectie, 0, camera, 0);
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        float lx = (float) Math.sin(Math.toRadians(rotatieFundal)) * 14f;
-        float lz = (float) Math.cos(Math.toRadians(rotatieFundal)) * 14f + 10f;
-        cub.seteazaLumina(lx, 16f, lz);
+        float lx = (float) Math.sin(Math.toRadians(rotatieFundal)) * 16f;
+        float lz = (float) Math.cos(Math.toRadians(rotatieFundal)) * 16f + 12f;
+        cub.seteazaLumina(lx, 18f, lz);
 
         float latTabla = Joc.COLOANE;
         float inaltTabla = Joc.RANDURI;
         offX = -latTabla / 2f + 0.5f;
         offY = -inaltTabla / 2f + 1.0f;
+
+        stele.deseneaza(cub, vizProiectie, model, mvp);
 
         deseneazaChenar(latTabla);
         deseneazaBlocuri();
@@ -103,18 +114,18 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         deseneazaInterfata();
     }
 
-    // ---------- chenarul tablei ----------
     private void deseneazaChenar(float latTabla) {
+        // stalpi laterali subtiri, impinsi in spate
         for (int r = 0; r < Joc.RANDURI; r++) {
-            deseneaza(offX - 1f, offY + r, -0.5f, 0.16f, 0.18f, 0.28f, 0.55f, 1f);
-            deseneaza(offX + latTabla, offY + r, -0.5f, 0.16f, 0.18f, 0.28f, 0.55f, 1f);
+            deseneaza(offX - 0.85f, offY + r, -1.2f, 0.10f, 0.12f, 0.20f, 0.60f, 0.55f);
+            deseneaza(offX + latTabla - 0.15f, offY + r, -1.2f, 0.10f, 0.12f, 0.20f, 0.60f, 0.55f);
         }
-        for (int c = -1; c <= Joc.COLOANE; c++) {
-            deseneaza(offX + c, offY - 1f, -0.5f, 0.22f, 0.24f, 0.36f, 0.75f, 1f);
+        // podeaua, mai vizibila
+        for (int c = 0; c < Joc.COLOANE; c++) {
+            deseneaza(offX + c, offY - 1f, -0.4f, 0.20f, 0.24f, 0.40f, 0.85f, 0.92f);
         }
     }
 
-    // ---------- blocurile asezate ----------
     private void deseneazaBlocuri() {
         for (int r = 0; r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
@@ -127,19 +138,18 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // ---------- umbra piesei ----------
     private void deseneazaFantoma() {
         int[][] forma = joc.formaCurenta();
         int yFantoma = joc.pozitieFantoma();
-        float pulsatie = 0.16f + 0.10f * (float) Math.abs(Math.sin(puls));
+        float[] cul = CULORI[joc.tipCurent];
+        float pulsatie = 0.20f + 0.14f * (float) Math.abs(Math.sin(puls));
         for (int i = 0; i < 4; i++) {
             float cx = offX + joc.pieseX + forma[i][0];
             float cy = offY + yFantoma + forma[i][1];
-            deseneaza(cx, cy, 0f, 0.55f, 0.60f, 0.75f, pulsatie, 0.94f);
+            deseneaza(cx, cy, 0f, cul[0], cul[1], cul[2], pulsatie, 0.90f);
         }
     }
 
-    // ---------- piesa care cade ----------
     private void deseneazaPiesa() {
         int[][] forma = joc.formaCurenta();
         float[] culP = CULORI[joc.tipCurent];
@@ -150,33 +160,23 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // ---------- interfata: scor, nivel, linii, piesa urmatoare ----------
     private void deseneazaInterfata() {
-        float sus = offY + Joc.RANDURI + 1.5f;
-        float scaraCifre = 0.30f;
+        float sus = offY + Joc.RANDURI + 1.2f;
+        float sc = 0.26f;
 
-        // scor, sus in stanga
-        deseneazaNumar(joc.scor, offX - 0.5f, sus, scaraCifre,
-                1.0f, 0.95f, 0.55f);
+        deseneazaNumar(joc.scor, offX - 0.5f, sus, sc, 1.0f, 0.92f, 0.50f);
+        deseneazaNumar(joc.nivel, offX + Joc.COLOANE - 1.6f, sus, sc, 0.45f, 0.95f, 1.0f);
+        deseneazaNumar(joc.linii, offX + Joc.COLOANE - 1.6f, sus - 1.9f, sc, 0.70f, 0.80f, 1.0f);
 
-        // nivel, sus in dreapta
-        deseneazaNumar(joc.nivel, offX + Joc.COLOANE - 2.0f, sus, scaraCifre,
-                0.45f, 0.95f, 1.0f);
-
-        // linii, sub nivel
-        deseneazaNumar(joc.linii, offX + Joc.COLOANE - 2.0f, sus - 2.2f, scaraCifre,
-                0.70f, 0.80f, 1.0f);
-
-        // piesa urmatoare, jos sub tabla
         deseneazaUrmatoarea();
     }
 
     private void deseneazaUrmatoarea() {
         int[][] forma = Joc.formaPiesei(joc.tipUrmator, 0);
         float[] cul = CULORI[joc.tipUrmator];
-        float bazaX = offX + Joc.COLOANE / 2f - 1.5f;
-        float bazaY = offY - 4.2f;
-        float scara = 0.45f;
+        float bazaX = offX + Joc.COLOANE / 2f - 1.2f;
+        float bazaY = offY - 3.8f;
+        float scara = 0.42f;
 
         for (int i = 0; i < 4; i++) {
             float cx = bazaX + forma[i][0] * scara;
@@ -185,7 +185,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    // deseneaza un numar din cuburi mici
     private void deseneazaNumar(int valoare, float x, float y, float scara,
                                 float r, float g, float b) {
         String text = String.valueOf(valoare);
