@@ -24,8 +24,11 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Setează drepturi gradlew
+        run: chmod +x gradlew
+
       - name: Construieste APK-ul
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Urca APK-ul
         uses: actions/upload-artifact@v4
