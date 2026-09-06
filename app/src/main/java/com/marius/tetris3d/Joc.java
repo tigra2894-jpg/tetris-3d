@@ -56,6 +56,7 @@ public class Joc {
         pieseX = 3;
         pieseY = RANDURI - 1;
         alunecare = 0f;
+        ceas = 0f;
         if (ciocnire(pieseX, pieseY, rotatie)) {
             terminat = true;
             reseteaza();
@@ -71,6 +72,8 @@ public class Joc {
         terminat = false;
         tipCurent = rnd.nextInt(7);
         rotatie = 0; pieseX = 3; pieseY = RANDURI - 1;
+        alunecare = 0f;
+        ceas = 0f;
     }
 
     public int[][] formaCurenta() {
@@ -89,24 +92,13 @@ public class Joc {
         return false;
     }
 
-    
-public void actualizeaza(float dt) {
+    public void muta(int dir) {
         if (terminat) return;
-
-        ceas += dt;
-        alunecare = -(ceas / vitezaCadere);
-        if (alunecare < -1f) alunecare = -1f;
-
-        if (ceas >= vitezaCadere) {
-            ceas = 0f;
-            alunecare = 0f;
-            if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
-                pieseY--;
-            } else {
-                aseaza();
-            }
+        if (!ciocnire(pieseX + dir, pieseY, rotatie)) {
+            pieseX += dir;
         }
     }
+
     public void roteste() {
         if (terminat) return;
         int nou = (rotatie + 1) % 4;
@@ -118,8 +110,12 @@ public void actualizeaza(float dt) {
 
     public void coboaraRapid() {
         if (terminat) return;
-        ceas = vitezaCadere;
-        scor += 1;
+        if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+            pieseY--;
+            scor += 1;
+            ceas = 0f;
+            alunecare = 0f;
+        }
     }
 
     public void trantesteJos() {
@@ -128,6 +124,8 @@ public void actualizeaza(float dt) {
             pieseY--;
             scor += 2;
         }
+        alunecare = 0f;
+        ceas = 0f;
         aseaza();
     }
 
@@ -192,8 +190,13 @@ public void actualizeaza(float dt) {
         if (terminat) return;
 
         ceas += dt;
-        alunecare = -(ceas / vitezaCadere);
-        if (alunecare < -1f) alunecare = -1f;
+
+        if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+            alunecare = -(ceas / vitezaCadere);
+            if (alunecare < -1f) alunecare = -1f;
+        } else {
+            alunecare = 0f;
+        }
 
         if (ceas >= vitezaCadere) {
             ceas = 0f;
@@ -205,4 +208,4 @@ public void actualizeaza(float dt) {
             }
         }
     }
-        }
+    }
