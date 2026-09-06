@@ -45,13 +45,13 @@ public class Joc {
     public boolean pauza = false;
 
     public Particule particule;
+    public Sunet sunet;
 
     private final Random rnd = new Random();
     private float ceas = 0f;
     private float vitezaCadere = 0.75f;
     private float alunecare = 0f;
 
-    // cutremur: intensitate per rand
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
 
@@ -71,6 +71,7 @@ public class Joc {
         if (ciocnire(pieseX, pieseY, rotatie)) {
             terminat = true;
             if (scor > record) record = scor;
+            if (sunet != null) sunet.final_();
         }
     }
 
@@ -110,16 +111,23 @@ public class Joc {
 
     public void muta(int dir) {
         if (!activ()) return;
-        if (!ciocnire(pieseX + dir, pieseY, rotatie)) pieseX += dir;
+        if (!ciocnire(pieseX + dir, pieseY, rotatie)) {
+            pieseX += dir;
+            if (sunet != null) sunet.mutare();
+        }
     }
 
     public void roteste() {
         if (!activ()) return;
         int nou = (rotatie + 1) % 4;
-        if (!ciocnire(pieseX, pieseY, nou))     { rotatie = nou; return; }
-        if (!ciocnire(pieseX - 1, pieseY, nou)) { pieseX--; rotatie = nou; return; }
-        if (!ciocnire(pieseX + 1, pieseY, nou)) { pieseX++; rotatie = nou; return; }
-        if (!ciocnire(pieseX - 2, pieseY, nou)) { pieseX -= 2; rotatie = nou; }
+        boolean reusit = false;
+
+        if (!ciocnire(pieseX, pieseY, nou))          { rotatie = nou; reusit = true; }
+        else if (!ciocnire(pieseX - 1, pieseY, nou)) { pieseX--; rotatie = nou; reusit = true; }
+        else if (!ciocnire(pieseX + 1, pieseY, nou)) { pieseX++; rotatie = nou; reusit = true; }
+        else if (!ciocnire(pieseX - 2, pieseY, nou)) { pieseX -= 2; rotatie = nou; reusit = true; }
+
+        if (reusit && sunet != null) sunet.rotire();
     }
 
     public void coboaraRapid() {
@@ -138,7 +146,8 @@ public class Joc {
         alunecare = 0f;
         ceas = 0f;
         cutremurGlobal = 1f;
-        aseaza();
+        if (sunet != null) sunet.trantire();
+        aseaza(false);
     }
 
     public int pozitieFantoma() {
@@ -151,7 +160,6 @@ public class Joc {
         return (pieseY - 3) + alunecare;
     }
 
-    // cat de aproape e piesa de locul de aterizare: 0 departe, 1 lipita
     public float apropiere() {
         int yAteriz = pozitieFantoma();
         float dist = pieseYVizual() - yAteriz;
@@ -162,7 +170,6 @@ public class Joc {
         return p;
     }
 
-    // coloanele peste care va cadea piesa
     public boolean coloanaTinta(int c) {
         int[][] f = formaCurenta();
         for (int i = 0; i < 4; i++) {
@@ -171,17 +178,18 @@ public class Joc {
         return false;
     }
 
-    private void aseaza() {
+    private void aseaza(boolean cuSunet) {
         int[][] f = formaCurenta();
         for (int i = 0; i < 4; i++) {
             int x = pieseX + f[i][0];
             int y = pieseY + f[i][1] - 3;
             if (y >= 0 && y < RANDURI && x >= 0 && x < COLOANE) {
                 tabla[y][x] = tipCurent + 1;
-                if (y < RANDURI) tremurRand[y] = 1f;
+                tremurRand[y] = 1f;
                 if (y > 0) tremurRand[y - 1] = 0.7f;
             }
         }
+        if (cuSunet && sunet != null) sunet.aterizare();
         verificaLinii();
         pieseNoua();
     }
@@ -203,23 +211,33 @@ public class Joc {
                 r--;
             }
         }
+
         if (sterse > 0) {
+            int nivelVechi = nivel;
             linii += sterse;
+
             switch (sterse) {
                 case 1: scor += 100 * nivel; break;
                 case 2: scor += 300 * nivel; break;
                 case 3: scor += 500 * nivel; break;
                 default: scor += 800 * nivel; break;
             }
+
+            if (sunet != null) {
+                if (sterse >= 4) sunet.tetris();
+                else sunet.linie();
+            }
+
             if (scor > record) record = scor;
             nivel = 1 + linii / 10;
             vitezaCadere = Math.max(0.09f, 0.75f - (nivel - 1) * 0.06f);
             cutremurGlobal = Math.min(1f, cutremurGlobal + 0.5f * sterse);
+
+            if (nivel > nivelVechi && sunet != null) sunet.nivel();
         }
     }
 
     public void actualizeaza(float dt) {
-        // tremurul se stinge mereu, chiar si in pauza
         for (int r = 0; r < RANDURI; r++) {
             tremurRand[r] -= dt * 2.2f;
             if (tremurRand[r] < 0f) tremurRand[r] = 0f;
@@ -244,8 +262,8 @@ public class Joc {
             if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
                 pieseY--;
             } else {
-                aseaza();
+                aseaza(true);
             }
         }
     }
-}
+    }
