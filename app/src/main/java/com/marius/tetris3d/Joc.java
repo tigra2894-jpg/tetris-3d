@@ -26,7 +26,13 @@ public class Joc {
          {{0,2},{1,2},{2,2},{0,3}}, {{0,1},{1,1},{1,2},{1,3}}}
     };
 
+    // acces la forme din afara clasei (folosit la piesa urmatoare)
+    public static int[][] formaPiesei(int tip, int rot) {
+        return PIESE[tip][rot];
+    }
+
     public int tipCurent;
+    public int tipUrmator;
     public int rotatie;
     public int pieseX;
     public int pieseY;
@@ -47,11 +53,13 @@ public class Joc {
 
     public Joc() {
         for (int i = 0; i < RANDURI; i++) scaraRanduri[i] = 1f;
+        tipUrmator = rnd.nextInt(7);
         pieseNoua();
     }
 
     private void pieseNoua() {
-        tipCurent = rnd.nextInt(7);
+        tipCurent = tipUrmator;
+        tipUrmator = rnd.nextInt(7);
         rotatie = 0;
         pieseX = 3;
         pieseY = RANDURI - 1;
@@ -70,6 +78,7 @@ public class Joc {
         scor = 0; linii = 0; nivel = 1;
         vitezaCadere = 0.75f;
         terminat = false;
+        tipUrmator = rnd.nextInt(7);
         tipCurent = rnd.nextInt(7);
         rotatie = 0; pieseX = 3; pieseY = RANDURI - 1;
         alunecare = 0f;
@@ -208,4 +217,4 @@ public class Joc {
             }
         }
     }
-    }
+         }
