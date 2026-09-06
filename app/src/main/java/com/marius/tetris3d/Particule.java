@@ -72,6 +72,7 @@ public class Particule {
         }
     }
 
+    /** desenare veche, prin matrici directe */
     public void deseneaza(Cub cub, float[] vizProiectie, float[] model,
                           float[] mvp, float offX, float offY) {
         for (int i = 0; i < MAX; i++) {
@@ -87,6 +88,20 @@ public class Particule {
             Matrix.multiplyMM(mvp, 0, vizProiectie, 0, model, 0);
 
             cub.deseneaza(mvp, model, cr[i], cg[i], cb[i], p);
+        }
+    }
+
+    /** desenare noua, prin Desenator */
+    public void deseneaza2(Desenator d, float offX, float offY) {
+        for (int i = 0; i < MAX; i++) {
+            if (viata[i] <= 0f) continue;
+
+            float p = viata[i] / viataMax[i];
+            float s = marime[i] * (0.35f + p * 0.65f);
+
+            d.cubRotit(offX + x[i], offY + y[i], z[i],
+                    (1f - p) * 320f, 0.6f, 1f, 0.4f,
+                    cr[i], cg[i], cb[i], p, s);
         }
     }
 }
