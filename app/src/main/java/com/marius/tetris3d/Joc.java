@@ -26,7 +26,6 @@ public class Joc {
          {{0,2},{1,2},{2,2},{0,3}}, {{0,1},{1,1},{1,2},{1,3}}}
     };
 
-    // acces la forme din afara clasei (folosit la piesa urmatoare)
     public static int[][] formaPiesei(int tip, int rot) {
         return PIESE[tip][rot];
     }
@@ -38,21 +37,25 @@ public class Joc {
     public int pieseY;
 
     public int scor = 0;
+    public int record = 0;
     public int linii = 0;
     public int nivel = 1;
+
     public boolean terminat = false;
+    public boolean pauza = false;
 
     public Particule particule;
 
     private final Random rnd = new Random();
     private float ceas = 0f;
     private float vitezaCadere = 0.75f;
-
     private float alunecare = 0f;
-    private final float[] scaraRanduri = new float[RANDURI];
+
+    // cutremur: intensitate per rand
+    public final float[] tremurRand = new float[RANDURI];
+    public float cutremurGlobal = 0f;
 
     public Joc() {
-        for (int i = 0; i < RANDURI; i++) scaraRanduri[i] = 1f;
         tipUrmator = rnd.nextInt(7);
         pieseNoua();
     }
@@ -67,22 +70,22 @@ public class Joc {
         ceas = 0f;
         if (ciocnire(pieseX, pieseY, rotatie)) {
             terminat = true;
-            reseteaza();
+            if (scor > record) record = scor;
         }
     }
 
-    private void reseteaza() {
+    public void jocNou() {
         for (int r = 0; r < RANDURI; r++)
             for (int c = 0; c < COLOANE; c++)
                 tabla[r][c] = 0;
+        for (int r = 0; r < RANDURI; r++) tremurRand[r] = 0f;
         scor = 0; linii = 0; nivel = 1;
         vitezaCadere = 0.75f;
         terminat = false;
+        pauza = false;
+        cutremurGlobal = 0f;
         tipUrmator = rnd.nextInt(7);
-        tipCurent = rnd.nextInt(7);
-        rotatie = 0; pieseX = 3; pieseY = RANDURI - 1;
-        alunecare = 0f;
-        ceas = 0f;
+        pieseNoua();
     }
 
     public int[][] formaCurenta() {
@@ -101,15 +104,17 @@ public class Joc {
         return false;
     }
 
+    private boolean activ() {
+        return !terminat && !pauza;
+    }
+
     public void muta(int dir) {
-        if (terminat) return;
-        if (!ciocnire(pieseX + dir, pieseY, rotatie)) {
-            pieseX += dir;
-        }
+        if (!activ()) return;
+        if (!ciocnire(pieseX + dir, pieseY, rotatie)) pieseX += dir;
     }
 
     public void roteste() {
-        if (terminat) return;
+        if (!activ()) return;
         int nou = (rotatie + 1) % 4;
         if (!ciocnire(pieseX, pieseY, nou))     { rotatie = nou; return; }
         if (!ciocnire(pieseX - 1, pieseY, nou)) { pieseX--; rotatie = nou; return; }
@@ -118,23 +123,21 @@ public class Joc {
     }
 
     public void coboaraRapid() {
-        if (terminat) return;
+        if (!activ()) return;
         if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
             pieseY--;
-            scor += 1;
             ceas = 0f;
             alunecare = 0f;
+            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.35f);
         }
     }
 
     public void trantesteJos() {
-        if (terminat) return;
-        while (!ciocnire(pieseX, pieseY - 1, rotatie)) {
-            pieseY--;
-            scor += 2;
-        }
+        if (!activ()) return;
+        while (!ciocnire(pieseX, pieseY - 1, rotatie)) pieseY--;
         alunecare = 0f;
         ceas = 0f;
+        cutremurGlobal = 1f;
         aseaza();
     }
 
@@ -148,8 +151,24 @@ public class Joc {
         return (pieseY - 3) + alunecare;
     }
 
-    public float scaraRand(int r) {
-        return scaraRanduri[r];
+    // cat de aproape e piesa de locul de aterizare: 0 departe, 1 lipita
+    public float apropiere() {
+        int yAteriz = pozitieFantoma();
+        float dist = pieseYVizual() - yAteriz;
+        if (dist < 0f) dist = 0f;
+        float p = 1f - (dist / 9f);
+        if (p < 0f) p = 0f;
+        if (p > 1f) p = 1f;
+        return p;
+    }
+
+    // coloanele peste care va cadea piesa
+    public boolean coloanaTinta(int c) {
+        int[][] f = formaCurenta();
+        for (int i = 0; i < 4; i++) {
+            if (pieseX + f[i][0] == c) return true;
+        }
+        return false;
     }
 
     private void aseaza() {
@@ -159,6 +178,8 @@ public class Joc {
             int y = pieseY + f[i][1] - 3;
             if (y >= 0 && y < RANDURI && x >= 0 && x < COLOANE) {
                 tabla[y][x] = tipCurent + 1;
+                if (y < RANDURI) tremurRand[y] = 1f;
+                if (y > 0) tremurRand[y - 1] = 0.7f;
             }
         }
         verificaLinii();
@@ -190,13 +211,23 @@ public class Joc {
                 case 3: scor += 500 * nivel; break;
                 default: scor += 800 * nivel; break;
             }
+            if (scor > record) record = scor;
             nivel = 1 + linii / 10;
             vitezaCadere = Math.max(0.09f, 0.75f - (nivel - 1) * 0.06f);
+            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.5f * sterse);
         }
     }
 
     public void actualizeaza(float dt) {
-        if (terminat) return;
+        // tremurul se stinge mereu, chiar si in pauza
+        for (int r = 0; r < RANDURI; r++) {
+            tremurRand[r] -= dt * 2.2f;
+            if (tremurRand[r] < 0f) tremurRand[r] = 0f;
+        }
+        cutremurGlobal -= dt * 2.6f;
+        if (cutremurGlobal < 0f) cutremurGlobal = 0f;
+
+        if (!activ()) return;
 
         ceas += dt;
 
@@ -217,4 +248,4 @@ public class Joc {
             }
         }
     }
-         }
+}
