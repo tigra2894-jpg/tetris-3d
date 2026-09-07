@@ -2,10 +2,6 @@ package com.marius.tetris3d;
 
 import android.opengl.Matrix;
 
-/**
- * Tot ce se deseneaza in joc trece pe aici.
- * Ecranele nu ating OpenGL direct: cer un cub, un text, un numar.
- */
 public class Desenator {
 
     private final Cub cub;
@@ -16,24 +12,25 @@ public class Desenator {
     private final float[] model     = new float[16];
     private final float[] mvp       = new float[16];
 
-    // raportul ecranului, pentru asezarea corecta a textului
     public float raport = 0.5f;
+    private float fovY = 46f;
+    private float camEyeZ = 26f;
 
     public Desenator(Cub cub) {
         this.cub = cub;
         Matrix.setIdentityM(vizProj, 0);
     }
 
-    // ---------- camera ----------
-
     public void seteazaProiectie(float unghi, float raportEcran,
                                  float aproape, float departe) {
         raport = raportEcran;
+        fovY = unghi;
         Matrix.perspectiveM(proiectie, 0, unghi, raportEcran, aproape, departe);
     }
 
     public void seteazaCamera(float ochiX, float ochiY, float ochiZ,
                               float tintaX, float tintaY, float tintaZ) {
+        camEyeZ = ochiZ;
         Matrix.setLookAtM(camera, 0,
                 ochiX, ochiY, ochiZ,
                 tintaX, tintaY, tintaZ,
@@ -45,9 +42,16 @@ public class Desenator {
         cub.seteazaLumina(x, y, z);
     }
 
-    // ---------- desenare de baza ----------
+    public float inaltimeLaZ(float z) {
+        float dist = camEyeZ - z;
+        if (dist < 1f) dist = 1f;
+        return 2f * dist * (float) Math.tan(Math.toRadians(fovY / 2f));
+    }
 
-    /** un cub simplu */
+    public float latimeLaZ(float z) {
+        return inaltimeLaZ(z) * raport;
+    }
+
     public void cub(float x, float y, float z,
                     float r, float g, float b,
                     float alfa, float scara) {
@@ -58,7 +62,6 @@ public class Desenator {
         cub.deseneaza(mvp, model, r, g, b, alfa);
     }
 
-    /** cub cu scara diferita pe fiecare axa */
     public void cubIntins(float x, float y, float z,
                           float sx, float sy, float sz,
                           float r, float g, float b, float alfa) {
@@ -69,7 +72,6 @@ public class Desenator {
         cub.deseneaza(mvp, model, r, g, b, alfa);
     }
 
-    /** cub rotit in jurul unei axe */
     public void cubRotit(float x, float y, float z,
                          float unghi, float axaX, float axaY, float axaZ,
                          float r, float g, float b,
@@ -82,15 +84,11 @@ public class Desenator {
         cub.deseneaza(mvp, model, r, g, b, alfa);
     }
 
-    // ---------- text ----------
-
-    /** latimea totala a unui text, in unitati de lume */
     public float latimeText(String s, float scara) {
         if (s == null || s.isEmpty()) return 0f;
         return s.length() * (Cifre.latime() + 1) * scara - scara;
     }
 
-    /** scrie un text pornind din coltul stanga-sus dat */
     public void text(String s, float x, float y, float scara,
                      float r, float g, float b) {
         text(s, x, y, 0f, scara, r, g, b, 1f);
@@ -118,7 +116,6 @@ public class Desenator {
         }
     }
 
-    /** scrie un text centrat pe orizontala fata de x */
     public void textCentrat(String s, float xCentru, float y, float scara,
                             float r, float g, float b) {
         textCentrat(s, xCentru, y, 0f, scara, r, g, b, 1f);
@@ -130,21 +127,28 @@ public class Desenator {
         text(s, xCentru - lat / 2f, y, z, scara, r, g, b, alfa);
     }
 
-    /** un numar, centrat */
+    public void textPotrivit(String s, float xCentru, float y, float scaraMax,
+                             float r, float g, float b, float alfa,
+                             float procentDinEcran) {
+        float latimeMax = latimeLaZ(0f) * procentDinEcran;
+        float scara = scaraMax;
+        float lat = latimeText(s, scara);
+        if (lat > latimeMax && lat > 0f) {
+            scara = scaraMax * (latimeMax / lat);
+        }
+        textCentrat(s, xCentru, y, 0f, scara, r, g, b, alfa);
+    }
+
     public void numarCentrat(int valoare, float xCentru, float y, float scara,
                              float r, float g, float b) {
         textCentrat(String.valueOf(valoare), xCentru, y, scara, r, g, b);
     }
 
-    /** un numar, pornind din stanga */
     public void numar(int valoare, float x, float y, float scara,
                       float r, float g, float b) {
         text(String.valueOf(valoare), x, y, scara, r, g, b);
     }
 
-    // ---------- forme ajutatoare ----------
-
-    /** o linie orizontala din cuburi mici */
     public void linieOrizontala(float xStanga, float xDreapta, float y, float z,
                                 float grosime,
                                 float r, float g, float b, float alfa) {
@@ -154,7 +158,6 @@ public class Desenator {
         }
     }
 
-    /** un chenar dreptunghiular din cuburi mici */
     public void chenar(float xCentru, float yCentru,
                        float latime, float inaltime, float z,
                        float grosime,
@@ -173,4 +176,4 @@ public class Desenator {
             cub(dr, y, z, r, g, b, alfa, grosime);
         }
     }
-        }
+                              }
