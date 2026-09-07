@@ -49,8 +49,12 @@ public class Joc {
     public Particule particule;
     public Sunet sunet;
 
-    /** viteza de start, ceruta din Setari; 0.75 implicit */
+    /** viteza de start, ceruta din Setari */
     public float vitezaInitiala = 0.75f;
+
+    /** paleta de culori curenta si stilul vizual al modului */
+    public float[][] culori;
+    public boolean stilSticla = false;
 
     private final Random rnd = new Random();
     private float ceas = 0f;
@@ -206,7 +210,13 @@ public class Joc {
                 if (tabla[r][c] == 0) { plin = false; break; }
             }
             if (plin) {
-                if (particule != null) particule.explozie(r, COLOANE);
+                if (particule != null) {
+                    if (stilSticla && culori != null) {
+                        particule.explozieColorata(r, COLOANE, tabla[r], culori);
+                    } else {
+                        particule.explozie(r, COLOANE);
+                    }
+                }
                 for (int rr = r; rr < RANDURI - 1; rr++) {
                     System.arraycopy(tabla[rr + 1], 0, tabla[rr], 0, COLOANE);
                 }
@@ -244,7 +254,6 @@ public class Joc {
         }
     }
 
-    /** actualizarea normala, cand jocul e activ */
     public void actualizeaza(float dt) {
         stingeEfecte(dt);
 
@@ -270,8 +279,6 @@ public class Joc {
         }
     }
 
-    /** doar stinge tremurul si cutremurul, fara sa miste piesa.
-     *  folosit in pauza si la ecranul final. */
     public void stingeEfecte(float dt) {
         for (int r = 0; r < RANDURI; r++) {
             tremurRand[r] -= dt * 2.2f;
