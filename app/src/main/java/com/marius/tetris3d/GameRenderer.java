@@ -41,6 +41,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         if (app.desenator != null) {
             app.desenator.raport = (float) latime / inaltime;
         }
+        if (app.ui != null) {
+            app.ui.redimensioneaza(latime, inaltime);
+        }
     }
 
     @Override
