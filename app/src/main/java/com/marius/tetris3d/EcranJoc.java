@@ -54,6 +54,8 @@ public class EcranJoc extends Ecran {
         mod = modNou;
         joc.vitezaInitiala = app.setari.vitezaInitiala();
         joc.record = app.setari.record(mod);
+        joc.culori = app.setari.culoriPiese();
+        joc.stilSticla = (mod == Setari.MOD_STICLA);
         joc.jocNou();
         stare = STARE_JOC;
         timpJucat = 0f;
@@ -162,7 +164,6 @@ public class EcranJoc extends Ecran {
         piesaUrmatoare(d);
         interfata();
 
-        if (stare == STARE_JOC)   butonPauza();
         if (stare == STARE_PAUZA) ecranPauza();
         if (stare == STARE_FINAL) ecranFinal();
     }
@@ -200,6 +201,7 @@ public class EcranJoc extends Ecran {
         boolean activ = (stare == STARE_JOC);
         float ap = activ ? joc.apropiere() : 0f;
         int yFantoma = activ ? joc.pozitieFantoma() : -1;
+        float alfaBloc = joc.stilSticla ? 0.62f : 1f;
 
         for (int r = 0; r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
@@ -221,7 +223,7 @@ public class EcranJoc extends Ecran {
                         Math.min(1f, cul[0] * lum),
                         Math.min(1f, cul[1] * lum),
                         Math.min(1f, cul[2] * lum),
-                        1f, 1f);
+                        alfaBloc, 1f);
             }
         }
     }
@@ -229,11 +231,12 @@ public class EcranJoc extends Ecran {
     private void piesaCurenta(Desenator d) {
         int[][] forma = joc.formaCurenta();
         float[] cul = culori[joc.tipCurent];
+        float alfaBloc = joc.stilSticla ? 0.75f : 1f;
 
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
                   offY + joc.pieseYVizual() + forma[i][1],
-                  0f, cul[0], cul[1], cul[2], 1f, 1f);
+                  0f, cul[0], cul[1], cul[2], alfaBloc, 1f);
         }
     }
 
@@ -252,8 +255,6 @@ public class EcranJoc extends Ecran {
         }
     }
 
-    // ---------- interfata text, prin CapaUI ----------
-
     private void interfata() {
         app.ui.text("SCOR", 0.06f, 0.06f, 0.024f, Color.rgb(150, 160, 190));
         app.ui.text(String.valueOf(joc.scor), 0.06f, 0.115f, 0.044f, Color.rgb(255, 225, 130));
@@ -266,23 +267,11 @@ public class EcranJoc extends Ecran {
 
         app.ui.textDreapta("LINII", 0.94f, 0.17f, 0.020f, Color.rgb(150, 160, 190));
         app.ui.textDreapta(String.valueOf(joc.linii), 0.94f, 0.205f, 0.028f, Color.rgb(180, 200, 255));
-    }
 
-    private void butonPauza() {
-        // doua bare mici sus in mijloc, ca pictograma
-        float y = offY + Joc.RANDURI + 1.2f;
-        float s = 0.24f;
-        for (int i = 0; i < 3; i++) {
-            deseneazaLoc(-0.3f, y - i * s, s);
-            deseneazaLoc( 0.3f, y - i * s, s);
+        if (stare == STARE_JOC) {
+            app.ui.textCentrat("| |", 0.5f, 0.05f, 0.026f, Color.rgb(190, 200, 230));
         }
     }
-
-    private void deseneazaLoc(float x, float y, float s) {
-        // pastram un mic reper 3D pentru butonul de pauza
-    }
-
-    // ---------- pauza ----------
 
     private void ecranPauza() {
         app.ui.panou(0.5f - 0.30f, Y_P_TITLU - 0.05f, 0.60f, 0.50f,
@@ -294,8 +283,6 @@ public class EcranJoc extends Ecran {
         buton("REINCEPE", Y_P_REINCEPE, 0.034f, Color.rgb(140, 205, 255));
         buton("MENIU",    Y_P_MENIU,    0.034f, Color.rgb(180, 190, 230));
     }
-
-    // ---------- final ----------
 
     private void ecranFinal() {
         float clip = 0.75f + 0.25f * puls(3f);
@@ -328,8 +315,6 @@ public class EcranJoc extends Ecran {
     private void buton(String s, float yFrac, float marime, int culoare) {
         app.ui.textCentrat(s, 0.5f, yFrac, marime, culoare);
     }
-
-    // ---------- atingeri ----------
 
     @Override
     public boolean atingere(float x, float y) {
