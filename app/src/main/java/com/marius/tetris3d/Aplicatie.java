@@ -5,11 +5,6 @@ import android.content.Context;
 
 import java.util.ArrayList;
 
-/**
- * Creierul aplicatiei.
- * Tine ecranul curent, comuta intre ecrane, pastreaza
- * lucrurile comune: setari, sunet, stele, desenator.
- */
 public class Aplicatie {
 
     public final Context context;
@@ -18,23 +13,20 @@ public class Aplicatie {
     public final Stele stele;
 
     public Desenator desenator;
+    public CapaUI ui;
 
-    // ecranul activ si istoricul, pentru butonul de inapoi
     private Ecran ecranCurent;
     private final ArrayList<Ecran> istoric = new ArrayList<>();
 
-    // ecranele, create o singura data
     public EcranMeniu       ecranMeniu;
     public EcranModuri      ecranModuri;
     public EcranSetari      ecranSetari;
     public EcranStatistici  ecranStatistici;
     public EcranJoc         ecranJoc;
 
-    // marimea ecranului in pixeli
     public float latimePx = 1f;
     public float inaltimePx = 1f;
 
-    // tranzitie intre ecrane
     private float tranzitie = 0f;
     private Ecran ecranUrmator = null;
 
@@ -44,11 +36,12 @@ public class Aplicatie {
         this.sunet = new Sunet();
         this.sunet.setPornit(setari.sunetPornit());
         this.stele = new Stele();
+        this.ui = new CapaUI();
     }
 
-    /** se cheama o data, cand suprafata grafica e gata */
     public void porneste(Cub cub) {
         desenator = new Desenator(cub);
+        ui.pregatesteGL();
 
         ecranMeniu      = new EcranMeniu(this);
         ecranModuri     = new EcranModuri(this);
@@ -64,22 +57,17 @@ public class Aplicatie {
         return desenator != null && ecranCurent != null;
     }
 
-    // ---------- comutarea intre ecrane ----------
-
-    /** merge la un ecran nou si tine minte de unde a venit */
     public void mergiLa(Ecran nou) {
         if (nou == null || nou == ecranCurent) return;
         istoric.add(ecranCurent);
         schimba(nou);
     }
 
-    /** merge la un ecran fara sa retina drumul (ex: meniul principal) */
     public void mergiLaRadacina(Ecran nou) {
         istoric.clear();
         schimba(nou);
     }
 
-    /** se intoarce la ecranul anterior; true daca a reusit */
     public boolean inapoi() {
         if (ecranCurent != null && ecranCurent.inapoi()) return true;
 
@@ -101,8 +89,6 @@ public class Aplicatie {
         return ecranCurent;
     }
 
-    // ---------- scurtaturi folosite de ecrane ----------
-
     public void meniu() {
         mergiLaRadacina(ecranMeniu);
     }
@@ -118,8 +104,6 @@ public class Aplicatie {
             ((Activity) context).finish();
         }
     }
-
-    // ---------- bucla ----------
 
     public void actualizeaza(float dt) {
         if (!gata()) return;
@@ -141,18 +125,16 @@ public class Aplicatie {
 
     public void deseneaza() {
         if (!gata()) return;
+        ui.inceputCadru();
         ecranCurent.deseneaza(desenator);
+        ui.deseneazaPeEcran();
     }
 
-    /** cat de intunecat e ecranul in timpul tranzitiei: 0 deloc, 1 negru */
     public float intunecare() {
-        // curba: negru la mijlocul tranzitiei
         float t = tranzitie;
         if (t <= 0f) return 0f;
         return 1f - Math.abs(t - 0.5f) * 2f;
     }
-
-    // ---------- atingeri ----------
 
     public boolean atingere(float xPx, float yPx) {
         if (!gata() || tranzitie > 0f) return false;
@@ -169,8 +151,6 @@ public class Aplicatie {
         if (!gata() || tranzitie > 0f) return false;
         return ecranCurent.ridicare(xPx / latimePx, yPx / inaltimePx);
     }
-
-    // ---------- pauza aplicatiei ----------
 
     public void laPauza() {
         if (ecranJoc != null) ecranJoc.laPauzaAplicatie();
