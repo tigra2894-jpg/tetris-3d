@@ -49,10 +49,8 @@ public class Joc {
     public Particule particule;
     public Sunet sunet;
 
-    /** viteza de start, ceruta din Setari */
     public float vitezaInitiala = 0.75f;
 
-    /** paleta de culori curenta si stilul vizual al modului */
     public float[][] culori;
     public boolean stilSticla = false;
 
@@ -60,6 +58,8 @@ public class Joc {
     private float ceas = 0f;
     private float vitezaCadere = 0.75f;
     private float alunecare = 0f;
+
+    private static final int LINII_PE_NIVEL = 8;
 
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
@@ -137,6 +137,30 @@ public class Joc {
         if (reusit && sunet != null) sunet.rotire();
     }
 
+    /** trece piesa curenta la forma urmatoare (0..6), pastrand pozitia daca se poate */
+    public void schimbaForma() {
+        if (terminat) return;
+        int nouTip = (tipCurent + 1) % 7;
+        int vechiTip = tipCurent;
+        int vechiRot = rotatie;
+
+        tipCurent = nouTip;
+        rotatie = 0;
+
+        if (ciocnire(pieseX, pieseY, rotatie)) {
+            if (!ciocnire(pieseX - 1, pieseY, rotatie)) { pieseX--; }
+            else if (!ciocnire(pieseX + 1, pieseY, rotatie)) { pieseX++; }
+            else if (!ciocnire(pieseX, pieseY + 1, rotatie)) { pieseY++; }
+            else {
+                tipCurent = vechiTip;
+                rotatie = vechiRot;
+                return;
+            }
+        }
+
+        if (sunet != null) sunet.rotire();
+    }
+
     public void coboaraRapid() {
         if (terminat) return;
         if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
@@ -196,6 +220,7 @@ public class Joc {
                 if (y > 0) tremurRand[y - 1] = 0.7f;
             }
         }
+        cutremurGlobal = Math.max(cutremurGlobal, 0.55f);
         pieseAsezate++;
         if (cuSunet && sunet != null) sunet.aterizare();
         verificaLinii();
@@ -246,12 +271,21 @@ public class Joc {
             }
 
             if (scor > record) record = scor;
-            nivel = 1 + linii / 10;
-            vitezaCadere = Math.max(0.09f, vitezaInitiala - (nivel - 1) * 0.06f);
+
+            nivel = 1 + linii / LINII_PE_NIVEL;
+            recalculeazaViteza();
             cutremurGlobal = Math.min(1f, cutremurGlobal + 0.5f * sterse);
 
             if (nivel > nivelVechi && sunet != null) sunet.nivel();
         }
+    }
+
+    private void recalculeazaViteza() {
+        float v = vitezaInitiala;
+        for (int i = 1; i < nivel; i++) {
+            v *= 0.82f;
+        }
+        vitezaCadere = Math.max(0.075f, v);
     }
 
     public void actualizeaza(float dt) {
@@ -287,4 +321,4 @@ public class Joc {
         cutremurGlobal -= dt * 2.6f;
         if (cutremurGlobal < 0f) cutremurGlobal = 0f;
     }
-}
+                }
