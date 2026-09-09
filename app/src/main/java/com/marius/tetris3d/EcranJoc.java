@@ -162,7 +162,9 @@ public class EcranJoc extends Ecran {
 
         particule.deseneaza2(d, offX, offY);
 
-        piesaUrmatoare(d);
+        if (!app.setari.schimbarePiesaPornita()) {
+            piesaUrmatoare(d);
+        }
         interfata();
 
         if (stare == STARE_PAUZA) ecranPauza();
@@ -416,4 +418,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-                                                          }
+    }
