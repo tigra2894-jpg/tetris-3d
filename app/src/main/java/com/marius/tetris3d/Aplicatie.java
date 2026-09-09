@@ -93,9 +93,10 @@ public class Aplicatie {
         mergiLaRadacina(ecranMeniu);
     }
 
-    public void jocNou(int mod) {
+    /** porneste un joc nou; liber=true activeaza schimbarea piesei la apasare */
+    public void jocNou(int mod, boolean liber) {
         setari.setUltimulMod(mod);
-        ecranJoc.pregateste(mod);
+        ecranJoc.pregateste(mod, liber);
         mergiLa(ecranJoc);
     }
 
