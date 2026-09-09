@@ -1,194 +1,222 @@
 package com.marius.tetris3d;
 
-import android.graphics.Color;
+import android.content.Context;
+import android.content.SharedPreferences;
 
-public class EcranSetari extends Ecran {
+public class Setari {
 
-    private static final float Y_TITLU = 0.07f;
+    public static final int MOD_CLASIC     = 0;
+    public static final int MOD_TURN       = 1;
+    public static final int MOD_GRAVITATIE = 2;
+    public static final int MOD_STICLA     = 3;
+    public static final int MOD_VIU        = 4;
+    public static final int MOD_SPATIU     = 5;
+    public static final int NR_MODURI      = 6;
 
-    private static final float Y_SUNET_L = 0.18f;
-    private static final float Y_SUNET_V = 0.235f;
+    public static final String[] NUME_MODURI = {
+        "CLASIC", "TURN", "GRAVITATIE", "STICLA", "VIU", "SPATIU"
+    };
 
-    private static final float Y_SCHIMB_L = 0.31f;
-    private static final float Y_SCHIMB_V = 0.365f;
+    public static final boolean[] MOD_DISPONIBIL = {
+        true,   // CLASIC
+        false,  // TURN - in lucru
+        false,  // GRAVITATIE
+        true,   // STICLA
+        false,  // VIU
+        false   // SPATIU
+    };
 
-    private static final float Y_VITEZA_L = 0.48f;
-    private static final float Y_VITEZA_V = 0.55f;
+    public static final int TEMA_NEON    = 0;
+    public static final int TEMA_FOC     = 1;
+    public static final int TEMA_GHEATA  = 2;
+    public static final int TEMA_PADURE  = 3;
+    public static final int NR_TEME      = 4;
 
-    private static final float Y_TEMA_L = 0.66f;
-    private static final float Y_TEMA_V = 0.72f;
+    public static final String[] NUME_TEME = {
+        "APUS", "FOC", "GHEATA", "PADURE"
+    };
 
-    private static final float Y_INAPOI = 0.93f;
+    private final SharedPreferences p;
 
-    private int atins = -1;
-    private float stralucire = 0f;
-
-    public EcranSetari(Aplicatie app) {
-        super(app);
+    public Setari(Context ctx) {
+        p = ctx.getSharedPreferences("tetris3d", Context.MODE_PRIVATE);
     }
 
-    @Override
-    public void laIntrare() {
-        super.laIntrare();
-        atins = -1;
-        stralucire = 0f;
+    public boolean sunetPornit() {
+        return p.getBoolean("sunet", true);
     }
 
-    @Override
-    public void actualizeaza(float dt) {
-        super.actualizeaza(dt);
-        stralucire -= dt * 3f;
-        if (stralucire < 0f) {
-            stralucire = 0f;
-            atins = -1;
+    public void setSunet(boolean v) {
+        p.edit().putBoolean("sunet", v).apply();
+    }
+
+    public int vitezaStart() {
+        return p.getInt("viteza", 1);
+    }
+
+    public void setVitezaStart(int v) {
+        if (v < 1) v = 1;
+        if (v > 5) v = 5;
+        p.edit().putInt("viteza", v).apply();
+    }
+
+    public int tema() {
+        return p.getInt("tema", TEMA_NEON);
+    }
+
+    public void setTema(int t) {
+        if (t < 0) t = 0;
+        if (t >= NR_TEME) t = NR_TEME - 1;
+        p.edit().putInt("tema", t).apply();
+    }
+
+    public int record(int mod) {
+        return p.getInt("record_" + mod, 0);
+    }
+
+    public void setRecord(int mod, int scor) {
+        if (scor > record(mod)) {
+            p.edit().putInt("record_" + mod, scor).apply();
         }
     }
 
-    @Override
-    public void deseneaza(Desenator d) {
-        d.seteazaProiectie(48f, d.raport, 1f, 90f);
-        d.seteazaCamera(0f, 0f, 26f, 0f, 0f, 0f);
-        d.seteazaLumina(
-                (float) Math.sin(timp * 0.5f) * 15f, 14f,
-                (float) Math.cos(timp * 0.5f) * 15f + 12f);
-
-        app.stele.deseneaza2(d);
-
-        app.ui.textCentrat("SETARI", 0.5f, Y_TITLU, 0.072f,
-                Color.rgb(220, 230, 255));
-
-        // ---------- sunet ----------
-        app.ui.textCentrat("SUNET", 0.5f, Y_SUNET_L, 0.024f,
-                Color.rgb(150, 160, 190));
-
-        boolean sunetPornit = app.setari.sunetPornit();
-        float lumS = (atins == 0) ? 1f + stralucire * 0.7f : 1f;
-
-        if (sunetPornit) {
-            app.ui.textCentrat("PORNIT", 0.5f, Y_SUNET_V, 0.040f,
-                    Color.rgb((int) Math.min(255, 90 * lumS),
-                              (int) Math.min(255, 255 * lumS),
-                              (int) Math.min(255, 140 * lumS)));
-        } else {
-            app.ui.textCentrat("OPRIT", 0.5f, Y_SUNET_V, 0.040f,
-                    Color.rgb((int) Math.min(255, 220 * lumS),
-                              (int) Math.min(255, 90 * lumS),
-                              (int) Math.min(255, 90 * lumS)));
-        }
-
-        // ---------- MOD LIBER: schimbare piesa la atingere ----------
-        app.ui.textCentrat("MOD LIBER", 0.5f, Y_SCHIMB_L, 0.026f,
-                Color.rgb(190, 170, 230));
-
-        boolean schimbPornit = app.setari.schimbarePiesaPornita();
-        float lumC = (atins == 1) ? 1f + stralucire * 0.7f : 1f;
-
-        if (schimbPornit) {
-            app.ui.textCentrat("PORNIT", 0.5f, Y_SCHIMB_V, 0.036f,
-                    Color.rgb((int) Math.min(255, 90 * lumC),
-                              (int) Math.min(255, 255 * lumC),
-                              (int) Math.min(255, 140 * lumC)));
-        } else {
-            app.ui.textCentrat("OPRIT", 0.5f, Y_SCHIMB_V, 0.036f,
-                    Color.rgb((int) Math.min(255, 220 * lumC),
-                              (int) Math.min(255, 90 * lumC),
-                              (int) Math.min(255, 90 * lumC)));
-        }
-
-        app.ui.textCentrat("APASA PE TABLA CA SA SCHIMBI PIESA", 0.5f,
-                Y_SCHIMB_V + 0.045f, 0.014f, Color.rgb(120, 125, 145));
-
-        // ---------- viteza ----------
-        app.ui.textCentrat("VITEZA DE START", 0.5f, Y_VITEZA_L, 0.024f,
-                Color.rgb(150, 160, 190));
-
-        int v = app.setari.vitezaStart();
-        StringBuilder bare = new StringBuilder();
-        for (int i = 1; i <= 5; i++) bare.append(i <= v ? "#" : "-");
-
-        app.ui.textCentrat("<", 0.20f, Y_VITEZA_V, 0.036f, Color.rgb(150, 190, 255));
-        app.ui.textCentrat(bare.toString(), 0.5f, Y_VITEZA_V, 0.036f,
-                Color.rgb(255, 200, 90));
-        app.ui.textCentrat(">", 0.80f, Y_VITEZA_V, 0.036f, Color.rgb(150, 190, 255));
-
-        // ---------- tema ----------
-        app.ui.textCentrat("TEMA", 0.5f, Y_TEMA_L, 0.024f,
-                Color.rgb(150, 160, 190));
-
-        int t = app.setari.tema();
-        app.ui.textCentrat(Setari.NUME_TEME[t], 0.5f, Y_TEMA_V, 0.044f,
-                Color.rgb(210, 190, 255));
-
-        float[][] culori = app.setari.culoriPiese();
-        for (int i = 0; i < 7; i++) {
-            float rotP = timp * 26f + i * 40f;
-            d.cubRotit((i - 3f) * 1.3f, -6.6f, 0f,
-                    rotP, 0.4f, 1f, 0.3f,
-                    culori[i][0], culori[i][1], culori[i][2],
-                    1f, 0.44f);
-        }
-
-        app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.028f,
-                Color.rgb(150, 160, 190));
+    public int ultimulMod() {
+        int m = p.getInt("ultim_mod", MOD_CLASIC);
+        if (m < 0 || m >= NR_MODURI || !MOD_DISPONIBIL[m]) return MOD_CLASIC;
+        return m;
     }
 
-    @Override
-    public boolean atingere(float x, float y) {
-
-        if (inRand(y, (Y_SUNET_L + Y_SUNET_V) / 2f, 0.09f)) {
-            boolean nou = !app.setari.sunetPornit();
-            app.setari.setSunet(nou);
-            app.sunet.setPornit(nou);
-            if (nou) app.sunet.nivel();
-            marcheaza(0);
-            return true;
-        }
-
-        if (inRand(y, (Y_SCHIMB_L + Y_SCHIMB_V) / 2f, 0.11f)) {
-            boolean nou = !app.setari.schimbarePiesaPornita();
-            app.setari.setSchimbarePiesa(nou);
-            app.sunet.rotire();
-            marcheaza(1);
-            return true;
-        }
-
-        if (inRand(y, (Y_VITEZA_L + Y_VITEZA_V) / 2f, 0.09f)) {
-            int v = app.setari.vitezaStart();
-            if (x < 0.35f) {
-                app.setari.setVitezaStart(v - 1);
-                marcheaza(2);
-                app.sunet.mutare();
-            } else if (x > 0.65f) {
-                app.setari.setVitezaStart(v + 1);
-                marcheaza(3);
-                app.sunet.mutare();
-            }
-            return true;
-        }
-
-        if (inRand(y, (Y_TEMA_L + Y_TEMA_V) / 2f, 0.09f)) {
-            int t = (app.setari.tema() + 1) % Setari.NR_TEME;
-            app.setari.setTema(t);
-            marcheaza(4);
-            app.sunet.rotire();
-            return true;
-        }
-
-        if (inRand(y, Y_INAPOI, 0.05f)) {
-            app.sunet.mutare();
-            app.inapoi();
-            return true;
-        }
-        return false;
+    public void setUltimulMod(int mod) {
+        p.edit().putInt("ultim_mod", mod).apply();
     }
 
-    private void marcheaza(int index) {
-        atins = index;
-        stralucire = 1f;
+    public int jocuriJucate() {
+        return p.getInt("stat_jocuri", 0);
     }
 
-    @Override
-    public boolean inapoi() {
-        return false;
+    public int liniiTotale() {
+        return p.getInt("stat_linii", 0);
+    }
+
+    public int pieseTotale() {
+        return p.getInt("stat_piese", 0);
+    }
+
+    public int timpTotalSecunde() {
+        return p.getInt("stat_timp", 0);
+    }
+
+    public int celMaiBunNivel() {
+        return p.getInt("stat_nivel", 1);
+    }
+
+    public int tetrisuri() {
+        return p.getInt("stat_tetris", 0);
+    }
+
+    public void adaugaJoc() {
+        p.edit().putInt("stat_jocuri", jocuriJucate() + 1).apply();
+    }
+
+    public void adaugaLinii(int n) {
+        p.edit().putInt("stat_linii", liniiTotale() + n).apply();
+    }
+
+    public void adaugaPiesa() {
+        p.edit().putInt("stat_piese", pieseTotale() + 1).apply();
+    }
+
+    public void adaugaTimp(int secunde) {
+        p.edit().putInt("stat_timp", timpTotalSecunde() + secunde).apply();
+    }
+
+    public void raporteazaNivel(int nivel) {
+        if (nivel > celMaiBunNivel()) {
+            p.edit().putInt("stat_nivel", nivel).apply();
+        }
+    }
+
+    public void adaugaTetris() {
+        p.edit().putInt("stat_tetris", tetrisuri() + 1).apply();
+    }
+
+    public void stergeStatistici() {
+        p.edit()
+         .remove("stat_jocuri")
+         .remove("stat_linii")
+         .remove("stat_piese")
+         .remove("stat_timp")
+         .remove("stat_nivel")
+         .remove("stat_tetris")
+         .apply();
+    }
+
+    public float[][] culoriPiese() {
+        switch (tema()) {
+
+            case TEMA_FOC:
+                return new float[][] {
+                    {1.00f, 0.78f, 0.12f},
+                    {1.00f, 0.42f, 0.05f},
+                    {0.92f, 0.12f, 0.06f},
+                    {1.00f, 0.58f, 0.22f},
+                    {0.62f, 0.05f, 0.04f},
+                    {1.00f, 0.88f, 0.42f},
+                    {0.82f, 0.24f, 0.02f}
+                };
+
+            case TEMA_GHEATA:
+                return new float[][] {
+                    {0.55f, 0.92f, 1.00f},
+                    {0.86f, 0.97f, 1.00f},
+                    {0.22f, 0.55f, 0.92f},
+                    {0.50f, 0.78f, 0.90f},
+                    {0.10f, 0.32f, 0.78f},
+                    {0.92f, 0.98f, 1.00f},
+                    {0.35f, 0.70f, 1.00f}
+                };
+
+            case TEMA_PADURE:
+                return new float[][] {
+                    {0.30f, 0.88f, 0.28f},
+                    {0.78f, 0.92f, 0.18f},
+                    {0.10f, 0.55f, 0.28f},
+                    {0.52f, 0.82f, 0.14f},
+                    {0.48f, 0.34f, 0.14f},
+                    {0.16f, 0.42f, 0.22f},
+                    {0.88f, 0.82f, 0.28f}
+                };
+
+            case TEMA_NEON:
+            default:
+                return new float[][] {
+                    {1.00f, 0.16f, 0.56f},
+                    {1.00f, 0.66f, 0.16f},
+                    {0.58f, 0.16f, 0.88f},
+                    {0.14f, 0.88f, 0.80f},
+                    {0.86f, 0.06f, 0.32f},
+                    {0.22f, 0.48f, 1.00f},
+                    {1.00f, 0.42f, 0.12f}
+                };
+        }
+    }
+
+    public float[] culoareFundal() {
+        switch (tema()) {
+            case TEMA_FOC:    return new float[] {0.07f, 0.02f, 0.02f};
+            case TEMA_GHEATA: return new float[] {0.02f, 0.04f, 0.09f};
+            case TEMA_PADURE: return new float[] {0.02f, 0.05f, 0.03f};
+            default:          return new float[] {0.05f, 0.02f, 0.09f};
+        }
+    }
+
+    public float vitezaInitiala() {
+        switch (vitezaStart()) {
+            case 2:  return 0.60f;
+            case 3:  return 0.45f;
+            case 4:  return 0.32f;
+            case 5:  return 0.22f;
+            default: return 0.75f;
+        }
     }
 }
