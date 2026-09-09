@@ -10,6 +10,7 @@ public class EcranJoc extends Ecran {
 
     private int stare = STARE_JOC;
     private int mod = Setari.MOD_CLASIC;
+    private boolean modLiber = false;
 
     public Joc joc;
     private Particule particule;
@@ -51,8 +52,10 @@ public class EcranJoc extends Ecran {
         joc.sunet = app.sunet;
     }
 
-    public void pregateste(int modNou) {
+    /** modLiber = true activeaza schimbarea piesei curente la apasare pe tabla */
+    public void pregateste(int modNou, boolean liber) {
         mod = modNou;
+        modLiber = liber;
         joc.vitezaInitiala = app.setari.vitezaInitiala();
         joc.record = app.setari.record(mod);
         joc.culori = app.setari.culoriPiese();
@@ -162,7 +165,7 @@ public class EcranJoc extends Ecran {
 
         particule.deseneaza2(d, offX, offY);
 
-        if (!app.setari.schimbarePiesaPornita()) {
+        if (!modLiber) {
             piesaUrmatoare(d);
         }
         interfata();
@@ -273,6 +276,9 @@ public class EcranJoc extends Ecran {
 
         if (stare == STARE_JOC) {
             app.ui.textCentrat("| |", 0.5f, 0.05f, 0.026f, Color.rgb(190, 200, 230));
+            if (modLiber) {
+                app.ui.textCentrat("LIBER", 0.5f, 0.09f, 0.016f, Color.rgb(190, 160, 255));
+            }
         }
     }
 
@@ -327,7 +333,7 @@ public class EcranJoc extends Ecran {
                 stare = STARE_JOC;
                 app.sunet.rotire();
             } else if (inRand(y, Y_P_REINCEPE, 0.06f)) {
-                pregateste(mod);
+                pregateste(mod, modLiber);
                 app.sunet.nivel();
             } else if (inRand(y, Y_P_MENIU, 0.06f)) {
                 salveaza();
@@ -339,7 +345,7 @@ public class EcranJoc extends Ecran {
 
         if (stare == STARE_FINAL) {
             if (inRand(y, Y_F_DIN_NOU, 0.06f)) {
-                pregateste(mod);
+                pregateste(mod, modLiber);
                 app.sunet.nivel();
             } else if (inRand(y, Y_F_MENIU, 0.06f)) {
                 app.sunet.mutare();
@@ -359,7 +365,7 @@ public class EcranJoc extends Ecran {
         startTimp = System.currentTimeMillis();
         gestFacut = false;
 
-        if (app.setari.schimbarePiesaPornita()) {
+        if (modLiber) {
             schimbLaAtingere = true;
         }
         return true;
