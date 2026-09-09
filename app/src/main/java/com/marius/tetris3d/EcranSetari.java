@@ -4,18 +4,21 @@ import android.graphics.Color;
 
 public class EcranSetari extends Ecran {
 
-    private static final float Y_TITLU = 0.09f;
+    private static final float Y_TITLU = 0.07f;
 
-    private static final float Y_SUNET_L = 0.24f;
-    private static final float Y_SUNET_V = 0.30f;
+    private static final float Y_SUNET_L = 0.18f;
+    private static final float Y_SUNET_V = 0.235f;
 
-    private static final float Y_VITEZA_L = 0.42f;
-    private static final float Y_VITEZA_V = 0.49f;
+    private static final float Y_SCHIMB_L = 0.31f;
+    private static final float Y_SCHIMB_V = 0.365f;
 
-    private static final float Y_TEMA_L = 0.62f;
-    private static final float Y_TEMA_V = 0.68f;
+    private static final float Y_VITEZA_L = 0.46f;
+    private static final float Y_VITEZA_V = 0.53f;
 
-    private static final float Y_INAPOI = 0.92f;
+    private static final float Y_TEMA_L = 0.64f;
+    private static final float Y_TEMA_V = 0.70f;
+
+    private static final float Y_INAPOI = 0.93f;
 
     private int atins = -1;
     private float stralucire = 0f;
@@ -51,66 +54,85 @@ public class EcranSetari extends Ecran {
 
         app.stele.deseneaza2(d);
 
-        app.ui.textCentrat("SETARI", 0.5f, Y_TITLU, 0.075f,
+        app.ui.textCentrat("SETARI", 0.5f, Y_TITLU, 0.072f,
                 Color.rgb(220, 230, 255));
 
         // ---------- sunet ----------
-        app.ui.textCentrat("SUNET", 0.5f, Y_SUNET_L, 0.026f,
+        app.ui.textCentrat("SUNET", 0.5f, Y_SUNET_L, 0.024f,
                 Color.rgb(150, 160, 190));
 
-        boolean pornit = app.setari.sunetPornit();
+        boolean sunetPornit = app.setari.sunetPornit();
         float lumS = (atins == 0) ? 1f + stralucire * 0.7f : 1f;
 
-        if (pornit) {
-            app.ui.textCentrat("PORNIT", 0.5f, Y_SUNET_V, 0.044f,
+        if (sunetPornit) {
+            app.ui.textCentrat("PORNIT", 0.5f, Y_SUNET_V, 0.040f,
                     Color.rgb((int) Math.min(255, 90 * lumS),
                               (int) Math.min(255, 255 * lumS),
                               (int) Math.min(255, 140 * lumS)));
         } else {
-            app.ui.textCentrat("OPRIT", 0.5f, Y_SUNET_V, 0.044f,
+            app.ui.textCentrat("OPRIT", 0.5f, Y_SUNET_V, 0.040f,
                     Color.rgb((int) Math.min(255, 220 * lumS),
                               (int) Math.min(255, 90 * lumS),
                               (int) Math.min(255, 90 * lumS)));
         }
 
+        // ---------- schimbare piesa la atingere ----------
+        app.ui.textCentrat("SCHIMBA PIESA LA APASARE", 0.5f, Y_SCHIMB_L, 0.020f,
+                Color.rgb(150, 160, 190));
+
+        boolean schimbPornit = app.setari.schimbarePiesaPornita();
+        float lumC = (atins == 1) ? 1f + stralucire * 0.7f : 1f;
+
+        if (schimbPornit) {
+            app.ui.textCentrat("PORNIT", 0.5f, Y_SCHIMB_V, 0.036f,
+                    Color.rgb((int) Math.min(255, 90 * lumC),
+                              (int) Math.min(255, 255 * lumC),
+                              (int) Math.min(255, 140 * lumC)));
+        } else {
+            app.ui.textCentrat("OPRIT", 0.5f, Y_SCHIMB_V, 0.036f,
+                    Color.rgb((int) Math.min(255, 220 * lumC),
+                              (int) Math.min(255, 90 * lumC),
+                              (int) Math.min(255, 90 * lumC)));
+        }
+
         // ---------- viteza ----------
-        app.ui.textCentrat("VITEZA DE START", 0.5f, Y_VITEZA_L, 0.026f,
+        app.ui.textCentrat("VITEZA DE START", 0.5f, Y_VITEZA_L, 0.024f,
                 Color.rgb(150, 160, 190));
 
         int v = app.setari.vitezaStart();
         StringBuilder bare = new StringBuilder();
         for (int i = 1; i <= 5; i++) bare.append(i <= v ? "#" : "-");
 
-        app.ui.textCentrat("<", 0.20f, Y_VITEZA_V, 0.040f, Color.rgb(150, 190, 255));
-        app.ui.textCentrat(bare.toString(), 0.5f, Y_VITEZA_V, 0.040f,
+        app.ui.textCentrat("<", 0.20f, Y_VITEZA_V, 0.036f, Color.rgb(150, 190, 255));
+        app.ui.textCentrat(bare.toString(), 0.5f, Y_VITEZA_V, 0.036f,
                 Color.rgb(255, 200, 90));
-        app.ui.textCentrat(">", 0.80f, Y_VITEZA_V, 0.040f, Color.rgb(150, 190, 255));
+        app.ui.textCentrat(">", 0.80f, Y_VITEZA_V, 0.036f, Color.rgb(150, 190, 255));
 
         // ---------- tema ----------
-        app.ui.textCentrat("TEMA", 0.5f, Y_TEMA_L, 0.026f,
+        app.ui.textCentrat("TEMA", 0.5f, Y_TEMA_L, 0.024f,
                 Color.rgb(150, 160, 190));
 
         int t = app.setari.tema();
-        app.ui.textCentrat(Setari.NUME_TEME[t], 0.5f, Y_TEMA_V, 0.048f,
+        app.ui.textCentrat(Setari.NUME_TEME[t], 0.5f, Y_TEMA_V, 0.044f,
                 Color.rgb(210, 190, 255));
 
         float[][] culori = app.setari.culoriPiese();
         for (int i = 0; i < 7; i++) {
             float rotP = timp * 26f + i * 40f;
-            d.cubRotit((i - 3f) * 1.4f, -6.0f, 0f,
+            d.cubRotit((i - 3f) * 1.3f, -6.6f, 0f,
                     rotP, 0.4f, 1f, 0.3f,
                     culori[i][0], culori[i][1], culori[i][2],
-                    1f, 0.48f);
+                    1f, 0.44f);
         }
 
-        app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.030f,
+        app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.028f,
                 Color.rgb(150, 160, 190));
     }
 
     @Override
     public boolean atingere(float x, float y) {
 
-        if (inRand(y, (Y_SUNET_L + Y_SUNET_V) / 2f, 0.10f)) {
+        if (inRand(y, (Y_SUNET_L + Y_SUNET_V) / 2f, 0.09f)) {
             boolean nou = !app.setari.sunetPornit();
             app.setari.setSunet(nou);
             app.sunet.setPornit(nou);
@@ -119,24 +141,32 @@ public class EcranSetari extends Ecran {
             return true;
         }
 
-        if (inRand(y, (Y_VITEZA_L + Y_VITEZA_V) / 2f, 0.10f)) {
+        if (inRand(y, (Y_SCHIMB_L + Y_SCHIMB_V) / 2f, 0.09f)) {
+            boolean nou = !app.setari.schimbarePiesaPornita();
+            app.setari.setSchimbarePiesa(nou);
+            app.sunet.rotire();
+            marcheaza(1);
+            return true;
+        }
+
+        if (inRand(y, (Y_VITEZA_L + Y_VITEZA_V) / 2f, 0.09f)) {
             int v = app.setari.vitezaStart();
             if (x < 0.35f) {
                 app.setari.setVitezaStart(v - 1);
-                marcheaza(1);
+                marcheaza(2);
                 app.sunet.mutare();
             } else if (x > 0.65f) {
                 app.setari.setVitezaStart(v + 1);
-                marcheaza(2);
+                marcheaza(3);
                 app.sunet.mutare();
             }
             return true;
         }
 
-        if (inRand(y, (Y_TEMA_L + Y_TEMA_V) / 2f, 0.10f)) {
+        if (inRand(y, (Y_TEMA_L + Y_TEMA_V) / 2f, 0.09f)) {
             int t = (app.setari.tema() + 1) % Setari.NR_TEME;
             app.setari.setTema(t);
-            marcheaza(3);
+            marcheaza(4);
             app.sunet.rotire();
             return true;
         }
