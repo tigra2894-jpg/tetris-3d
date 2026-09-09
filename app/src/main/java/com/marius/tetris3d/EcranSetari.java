@@ -12,11 +12,11 @@ public class EcranSetari extends Ecran {
     private static final float Y_SCHIMB_L = 0.31f;
     private static final float Y_SCHIMB_V = 0.365f;
 
-    private static final float Y_VITEZA_L = 0.46f;
-    private static final float Y_VITEZA_V = 0.53f;
+    private static final float Y_VITEZA_L = 0.48f;
+    private static final float Y_VITEZA_V = 0.55f;
 
-    private static final float Y_TEMA_L = 0.64f;
-    private static final float Y_TEMA_V = 0.70f;
+    private static final float Y_TEMA_L = 0.66f;
+    private static final float Y_TEMA_V = 0.72f;
 
     private static final float Y_INAPOI = 0.93f;
 
@@ -76,9 +76,9 @@ public class EcranSetari extends Ecran {
                               (int) Math.min(255, 90 * lumS)));
         }
 
-        // ---------- schimbare piesa la atingere ----------
-        app.ui.textCentrat("SCHIMBA PIESA LA APASARE", 0.5f, Y_SCHIMB_L, 0.020f,
-                Color.rgb(150, 160, 190));
+        // ---------- MOD LIBER: schimbare piesa la atingere ----------
+        app.ui.textCentrat("MOD LIBER", 0.5f, Y_SCHIMB_L, 0.026f,
+                Color.rgb(190, 170, 230));
 
         boolean schimbPornit = app.setari.schimbarePiesaPornita();
         float lumC = (atins == 1) ? 1f + stralucire * 0.7f : 1f;
@@ -94,6 +94,9 @@ public class EcranSetari extends Ecran {
                               (int) Math.min(255, 90 * lumC),
                               (int) Math.min(255, 90 * lumC)));
         }
+
+        app.ui.textCentrat("APASA PE TABLA CA SA SCHIMBI PIESA", 0.5f,
+                Y_SCHIMB_V + 0.045f, 0.014f, Color.rgb(120, 125, 145));
 
         // ---------- viteza ----------
         app.ui.textCentrat("VITEZA DE START", 0.5f, Y_VITEZA_L, 0.024f,
@@ -141,7 +144,7 @@ public class EcranSetari extends Ecran {
             return true;
         }
 
-        if (inRand(y, (Y_SCHIMB_L + Y_SCHIMB_V) / 2f, 0.09f)) {
+        if (inRand(y, (Y_SCHIMB_L + Y_SCHIMB_V) / 2f, 0.11f)) {
             boolean nou = !app.setari.schimbarePiesaPornita();
             app.setari.setSchimbarePiesa(nou);
             app.sunet.rotire();
