@@ -137,28 +137,74 @@ public class Joc {
         if (reusit && sunet != null) sunet.rotire();
     }
 
-    /** trece piesa curenta la forma urmatoare (0..6), pastrand pozitia daca se poate */
+    /** trece piesa curenta la urmatoarea combinatie tip+rotatie,
+     *  cauta agresiv un loc valid ca sa nu se blocheze niciodata */
     public void schimbaForma() {
         if (terminat) return;
-        int nouTip = (tipCurent + 1) % 7;
+
+        int nouRot = rotatie + 1;
+        int nouTip = tipCurent;
+        if (nouRot >= 4) {
+            nouRot = 0;
+            nouTip = (tipCurent + 1) % 7;
+        }
+
         int vechiTip = tipCurent;
         int vechiRot = rotatie;
+        int vechiX = pieseX;
+        int vechiY = pieseY;
 
         tipCurent = nouTip;
-        rotatie = 0;
+        rotatie = nouRot;
 
-        if (ciocnire(pieseX, pieseY, rotatie)) {
-            if (!ciocnire(pieseX - 1, pieseY, rotatie)) { pieseX--; }
-            else if (!ciocnire(pieseX + 1, pieseY, rotatie)) { pieseX++; }
-            else if (!ciocnire(pieseX, pieseY + 1, rotatie)) { pieseY++; }
-            else {
-                tipCurent = vechiTip;
-                rotatie = vechiRot;
-                return;
+        if (gasesteLocValid()) {
+            if (sunet != null) sunet.rotire();
+        } else {
+            tipCurent = vechiTip;
+            rotatie = vechiRot;
+            pieseX = vechiX;
+            pieseY = vechiY;
+        }
+    }
+
+    /** cauta un loc valid pentru piesa curenta, incercand mai multe pozitii pe X
+     *  si ridicand-o pe Y daca e nevoie; modifica pieseX/pieseY direct */
+    private boolean gasesteLocValid() {
+        int yOriginal = pieseY;
+
+        for (int dx = 0; dx <= COLOANE; dx++) {
+            int xDreapta = pieseX + dx;
+            int xStanga = pieseX - dx;
+
+            if (dx == 0) {
+                if (!ciocnire(pieseX, yOriginal, rotatie)) {
+                    pieseY = yOriginal;
+                    return true;
+                }
+            } else {
+                if (xDreapta < COLOANE && !ciocnire(xDreapta, yOriginal, rotatie)) {
+                    pieseX = xDreapta;
+                    pieseY = yOriginal;
+                    return true;
+                }
+                if (xStanga >= 0 && !ciocnire(xStanga, yOriginal, rotatie)) {
+                    pieseX = xStanga;
+                    pieseY = yOriginal;
+                    return true;
+                }
             }
         }
 
-        if (sunet != null) sunet.rotire();
+        for (int dy = 1; dy <= 6; dy++) {
+            int yNou = yOriginal + dy;
+            if (!ciocnire(3, yNou, rotatie)) {
+                pieseX = 3;
+                pieseY = yNou;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void coboaraRapid() {
@@ -321,4 +367,4 @@ public class Joc {
         cutremurGlobal -= dt * 2.6f;
         if (cutremurGlobal < 0f) cutremurGlobal = 0f;
     }
-                }
+}
