@@ -25,6 +25,7 @@ public class EcranJoc extends Ecran {
     private float startX, startY;
     private long startTimp;
     private boolean gestFacut = false;
+    private boolean schimbLaAtingere = false;
     private static final float PRAG = 0.055f;
 
     private static final float Y_P_TITLU    = 0.30f;
@@ -355,6 +356,10 @@ public class EcranJoc extends Ecran {
         startY = y;
         startTimp = System.currentTimeMillis();
         gestFacut = false;
+
+        if (app.setari.schimbarePiesaPornita()) {
+            schimbLaAtingere = true;
+        }
         return true;
     }
 
@@ -387,10 +392,15 @@ public class EcranJoc extends Ecran {
         float dy = Math.abs(y - startY);
 
         if (!gestFacut && durata < 250 && dx < PRAG && dy < PRAG) {
-            joc.roteste();
+            if (schimbLaAtingere) {
+                joc.schimbaForma();
+            } else {
+                joc.roteste();
+            }
         } else if ((startY - y) > PRAG * 2.2f) {
             joc.trantesteJos();
         }
+        schimbLaAtingere = false;
         return true;
     }
 
@@ -406,4 +416,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-}
+                                                          }
