@@ -28,6 +28,7 @@ public class EcranModuri extends Ecran {
 
     private float stralucire = 0f;
     private boolean apasatJoaca = false;
+    private float clipireBlocat = 0f;
 
     private static final float Y_TITLU  = 0.09f;
     private static final float Y_NUME   = 0.42f;
@@ -54,6 +55,7 @@ public class EcranModuri extends Ecran {
         derulareTinta = selectat;
         stralucire = 0f;
         apasatJoaca = false;
+        clipireBlocat = 0f;
     }
 
     @Override
@@ -65,6 +67,9 @@ public class EcranModuri extends Ecran {
 
         stralucire -= dt * 3f;
         if (stralucire < 0f) stralucire = 0f;
+
+        clipireBlocat -= dt * 3.5f;
+        if (clipireBlocat < 0f) clipireBlocat = 0f;
     }
 
     @Override
@@ -83,53 +88,78 @@ public class EcranModuri extends Ecran {
         int mod = Math.round(derulare);
         if (mod < 0) mod = 0;
         if (mod >= Setari.NR_MODURI) mod = Setari.NR_MODURI - 1;
+        boolean disponibil = Setari.MOD_DISPONIBIL[mod];
         int[] cul = CUL_MOD[mod];
 
+        int rNume = disponibil ? cul[0] : 110;
+        int gNume = disponibil ? cul[1] : 115;
+        int bNume = disponibil ? cul[2] : 130;
+
         app.ui.textCentrat(Setari.NUME_MODURI[mod], 0.5f, Y_NUME, 0.062f,
-                Color.rgb(cul[0], cul[1], cul[2]));
+                Color.rgb(rNume, gNume, bNume));
 
-        app.ui.textCentrat(DESCRIERI[mod][0], 0.5f, Y_DESC1, 0.028f,
-                Color.rgb(190, 200, 220));
-        app.ui.textCentrat(DESCRIERI[mod][1], 0.5f, Y_DESC2, 0.028f,
-                Color.rgb(190, 200, 220));
+        if (disponibil) {
+            app.ui.textCentrat(DESCRIERI[mod][0], 0.5f, Y_DESC1, 0.028f,
+                    Color.rgb(190, 200, 220));
+            app.ui.textCentrat(DESCRIERI[mod][1], 0.5f, Y_DESC2, 0.028f,
+                    Color.rgb(190, 200, 220));
 
-        app.ui.textCentrat("RECORD", 0.5f, Y_RECL, 0.024f,
-                Color.rgb(150, 160, 190));
-        app.ui.textCentrat(String.valueOf(app.setari.record(mod)), 0.5f, Y_RECV, 0.042f,
-                Color.rgb(255, 225, 130));
+            app.ui.textCentrat("RECORD", 0.5f, Y_RECL, 0.024f,
+                    Color.rgb(150, 160, 190));
+            app.ui.textCentrat(String.valueOf(app.setari.record(mod)), 0.5f, Y_RECV, 0.042f,
+                    Color.rgb(255, 225, 130));
+        } else {
+            float p = 0.6f + 0.4f * puls(2.2f);
+            app.ui.textCentrat("IN LUCRU", 0.5f, Y_DESC1 + 0.02f, 0.034f,
+                    Color.rgb((int) (255 * p), (int) (140 * p), 60));
+            app.ui.textCentrat("REVINE INTR-O", 0.5f, Y_RECL, 0.022f,
+                    Color.rgb(140, 145, 165));
+            app.ui.textCentrat("ACTUALIZARE VIITOARE", 0.5f, Y_RECV, 0.022f,
+                    Color.rgb(140, 145, 165));
+        }
 
-        // piesa rotitoare deasupra numelui
+        // piesa rotitoare deasupra numelui — mai stearsa daca e blocat
         float[][] culori = app.setari.culoriPiese();
         int[][] forma = Joc.formaPiesei(mod % 7, 0);
         float rotP = timp * 34f + mod * 60f;
         float[] culP = culori[mod % 7];
+        float alfaPiesa = disponibil ? 1f : 0.35f;
         for (int k = 0; k < 4; k++) {
             float cx = (forma[k][0] - 1.5f) * 0.95f;
             float cy = 5.6f + (forma[k][1] - 2.0f) * 0.95f;
             d.cubRotit(cx, cy, 0f, rotP, 0.4f, 1f, 0.3f,
-                    culP[0], culP[1], culP[2], 1f, 0.50f);
+                    culP[0], culP[1], culP[2], alfaPiesa, 0.50f);
         }
 
-        // puncte de navigare
+        // puncte de navigare — cele blocate sunt mai mici si stinse
         float xPuncte = 0.5f - (Setari.NR_MODURI - 1) * 0.035f;
         for (int i = 0; i < Setari.NR_MODURI; i++) {
             boolean act = (i == mod);
+            boolean disp = Setari.MOD_DISPONIBIL[i];
+            int culPunct;
+            if (act) culPunct = Color.rgb(255, 255, 255);
+            else if (disp) culPunct = Color.rgb(140, 150, 180);
+            else culPunct = Color.rgb(70, 72, 85);
+
             app.ui.textCentrat("*", xPuncte + i * 0.07f, Y_PUNCTE,
-                    act ? 0.032f : 0.020f,
-                    act ? Color.rgb(255, 255, 255) : Color.rgb(90, 95, 120));
+                    act ? 0.032f : 0.020f, culPunct);
         }
 
-        float lumJ = apasatJoaca ? 1f + stralucire : 1f;
-        app.ui.textCentrat("JOACA", 0.5f, Y_JOACA, 0.052f,
-                Color.rgb((int) Math.min(255, 90 * lumJ),
-                          (int) Math.min(255, 255 * lumJ),
-                          (int) Math.min(255, 140 * lumJ)));
+        // buton JOACA — dezactivat vizual daca modul e blocat
+        if (disponibil) {
+            float lumJ = apasatJoaca ? 1f + stralucire : 1f;
+            app.ui.textCentrat("JOACA", 0.5f, Y_JOACA, 0.052f,
+                    Color.rgb((int) Math.min(255, 90 * lumJ),
+                              (int) Math.min(255, 255 * lumJ),
+                              (int) Math.min(255, 140 * lumJ)));
+        } else {
+            float lumB = 1f + clipireBlocat * 0.6f;
+            app.ui.textCentrat("BLOCAT", 0.5f, Y_JOACA, 0.044f,
+                    Color.rgb((int) Math.min(255, 130 * lumB), 90, 90));
+        }
 
         app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.030f,
                 Color.rgb(150, 160, 190));
-
-        app.ui.textCentrat("< >", 0.5f, Y_DESC2 + 0.10f, 0.022f,
-                Color.rgb(90, 95, 120));
     }
 
     @Override
@@ -137,12 +167,21 @@ public class EcranModuri extends Ecran {
         startTragereX = x;
         trage = false;
 
+        int mod = Math.round(derulare);
+        if (mod < 0) mod = 0;
+        if (mod >= Setari.NR_MODURI) mod = Setari.NR_MODURI - 1;
+
         if (inRand(y, Y_JOACA, 0.06f)) {
-            apasatJoaca = true;
-            stralucire = 1f;
-            app.sunet.rotire();
-            app.setari.setUltimulMod(selectat);
-            app.jocNou(selectat);
+            if (Setari.MOD_DISPONIBIL[mod]) {
+                apasatJoaca = true;
+                stralucire = 1f;
+                app.sunet.rotire();
+                app.setari.setUltimulMod(selectat);
+                app.jocNou(selectat);
+            } else {
+                clipireBlocat = 1f;
+                app.sunet.mutare();
+            }
             return true;
         }
 
