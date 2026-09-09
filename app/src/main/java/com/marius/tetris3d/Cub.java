@@ -36,21 +36,21 @@ public class Cub {
             "void main() {\n" +
             "  vec2 d = abs(vUV - 0.5) * 2.0;\n" +
             "  float margine = max(d.x, d.y);\n" +
-            "  float tesitura = 1.0 - smoothstep(0.78, 1.0, margine);\n" +
+            "  float tesitura = 1.0 - smoothstep(0.76, 1.0, margine);\n" +
             "  vec3 N = normalize(vNormal);\n" +
             "  vec3 L = normalize(uLumina - vLume);\n" +
             "  vec3 V = normalize(uCamera - vLume);\n" +
             "  vec3 H = normalize(L + V);\n" +
             "  float difuz = max(dot(N, L), 0.0);\n" +
-            "  float spec = pow(max(dot(N, H), 0.0), 54.0);\n" +
-            "  float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0);\n" +
+            "  float spec = pow(max(dot(N, H), 0.0), 72.0);\n" +
+            "  float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.4);\n" +
             "  vec3 baza = uCuloare.rgb;\n" +
-            "  vec3 culoare = baza * 0.30;\n" +
-            "  culoare += baza * difuz * 0.90;\n" +
-            "  culoare += vec3(1.0, 0.98, 0.95) * spec * 0.75;\n" +
-            "  culoare += baza * fresnel * 0.55;\n" +
-            "  culoare *= (0.70 + 0.30 * tesitura);\n" +
-            "  culoare += baza * (1.0 - tesitura) * 0.60;\n" +
+            "  vec3 culoare = baza * 0.20;\n" +
+            "  culoare += baza * difuz * difuz * 1.10;\n" +
+            "  culoare += vec3(1.0, 0.97, 0.90) * spec * 0.95;\n" +
+            "  culoare += baza * fresnel * 0.65;\n" +
+            "  culoare *= (0.58 + 0.42 * tesitura);\n" +
+            "  culoare += baza * (1.0 - tesitura) * 0.35;\n" +
             "  gl_FragColor = vec4(culoare, uCuloare.a);\n" +
             "}\n";
 
