@@ -17,10 +17,9 @@ public class Setari {
         "CLASIC", "TURN", "GRAVITATIE", "STICLA", "VIU", "SPATIU"
     };
 
-    /** moduri jucabile acum; restul apar ca "in lucru" */
     public static final boolean[] MOD_DISPONIBIL = {
         true,   // CLASIC
-        true,   // TURN
+        false,  // TURN - in lucru
         false,  // GRAVITATIE
         true,   // STICLA
         false,  // VIU
@@ -49,14 +48,6 @@ public class Setari {
 
     public void setSunet(boolean v) {
         p.edit().putBoolean("sunet", v).apply();
-    }
-
-    public boolean schimbarePiesaPornita() {
-        return p.getBoolean("schimbare_piesa", false);
-    }
-
-    public void setSchimbarePiesa(boolean v) {
-        p.edit().putBoolean("schimbare_piesa", v).apply();
     }
 
     public int vitezaStart() {
