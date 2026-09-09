@@ -4,7 +4,6 @@ import android.graphics.Color;
 
 public class EcranMeniu extends Ecran {
 
-    private static final float Y_TITLU  = 0.16f;
     private static final float Y_JOACA  = 0.46f;
     private static final float Y_MODURI = 0.56f;
     private static final float Y_SETARI = 0.65f;
@@ -85,22 +84,20 @@ public class EcranMeniu extends Ecran {
         app.stele.deseneaza2(d);
         deseneazaPieseFundal(d);
 
-        // ---------- titlu, text normal ----------
         float apTitlu = intrare(0f, 0.5f);
-        float alfaTitlu = (int) (apTitlu * 255) << 24;
+        float pulsTitlu = 0.85f + 0.15f * puls(1.6f);
+        float yTitlu = ecranLaLume(0.14f);
 
-        int culTitlu1 = culoare(255, 235, 90, apTitlu);
-        int culTitlu2 = culoare(80, 220, 255, apTitlu);
+        d.textPotrivit("TETRIS", 0f, yTitlu, 0.40f,
+                1.0f * pulsTitlu, 0.85f * pulsTitlu, 0.30f, apTitlu, 0.80f);
+        d.textPotrivit("3D", 0f, yTitlu - 2.6f, 0.40f,
+                0.35f, 0.90f * pulsTitlu, 1.0f * pulsTitlu, apTitlu, 0.45f);
 
-        app.ui.textCentrat("TETRIS", 0.5f, Y_TITLU, 0.11f, culTitlu1);
-        app.ui.textCentrat("3D", 0.5f, Y_TITLU + 0.10f, 0.075f, culTitlu2);
-
-        // ---------- optiuni ----------
-        optiune("JOACA",      0, Y_JOACA,  0.052f, 100, 255, 140);
-        optiune("MODURI",     1, Y_MODURI, 0.044f, 140, 205, 255);
-        optiune("SETARI",     2, Y_SETARI, 0.044f, 215, 190, 255);
-        optiune("STATISTICI", 3, Y_STAT,   0.036f, 180, 190, 230);
-        optiune("IESIRE",     4, Y_IESIRE, 0.036f, 255, 115, 115);
+        optiune(d, "JOACA",      0, Y_JOACA,  0.30f, 0.40f, 1.00f, 0.55f);
+        optiune(d, "MODURI",     1, Y_MODURI, 0.24f, 0.55f, 0.80f, 1.00f);
+        optiune(d, "SETARI",     2, Y_SETARI, 0.24f, 0.85f, 0.75f, 1.00f);
+        optiune(d, "STATISTICI", 3, Y_STAT,   0.20f, 0.70f, 0.75f, 0.90f);
+        optiune(d, "IESIRE",     4, Y_IESIRE, 0.20f, 1.00f, 0.45f, 0.45f);
     }
 
     private float intrare(float intarziere, float durata) {
@@ -110,25 +107,23 @@ public class EcranMeniu extends Ecran {
         return t * t * (3f - 2f * t);
     }
 
-    private void optiune(String s, int index, float yFrac, float marime,
-                         int r, int g, int b) {
+    private void optiune(Desenator d, String s, int index, float yEcran,
+                         float scaraMax, float r, float g, float b) {
+
         float ap = intrare(index * 0.08f, 0.4f);
+        float scara = scaraMax * (0.7f + 0.3f * ap);
 
         float lum = 1f;
-        if (apasat == index) lum = 1f + stralucire * 0.7f;
+        if (apasat == index) lum = 1f + stralucire * 0.9f;
 
-        int culoare = culoare(
-                (int) Math.min(255, r * lum),
-                (int) Math.min(255, g * lum),
-                (int) Math.min(255, b * lum),
-                ap);
-
-        app.ui.textCentrat(s, 0.5f, yFrac, marime, culoare);
+        d.textPotrivit(s, 0f, ecranLaLume(yEcran), scara,
+                Math.min(1f, r * lum), Math.min(1f, g * lum), Math.min(1f, b * lum),
+                ap, 0.86f);
     }
 
-    private int culoare(int r, int g, int b, float alfa) {
-        int a = (int) (Math.max(0f, Math.min(1f, alfa)) * 255);
-        return Color.argb(a, r, g, b);
+    private float ecranLaLume(float yEcran) {
+        float h = 26f;
+        return h / 2f - yEcran * h;
     }
 
     private void deseneazaPieseFundal(Desenator d) {
@@ -155,7 +150,7 @@ public class EcranMeniu extends Ecran {
 
         if (inRand(y, Y_JOACA, GROSIME)) {
             apasa(0);
-            app.jocNou(app.setari.ultimulMod());
+            app.jocNou(app.setari.ultimulMod(), false);
             return true;
         }
         if (inRand(y, Y_MODURI, GROSIME)) {
@@ -192,4 +187,4 @@ public class EcranMeniu extends Ecran {
         app.iesire();
         return true;
     }
-            }
+}
