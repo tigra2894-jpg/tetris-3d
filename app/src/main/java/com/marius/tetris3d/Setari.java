@@ -17,6 +17,16 @@ public class Setari {
         "CLASIC", "TURN", "GRAVITATIE", "STICLA", "VIU", "SPATIU"
     };
 
+    /** moduri jucabile acum; restul apar ca "in lucru" */
+    public static final boolean[] MOD_DISPONIBIL = {
+        true,   // CLASIC
+        true,   // TURN
+        false,  // GRAVITATIE
+        true,   // STICLA
+        false,  // VIU
+        false   // SPATIU
+    };
+
     public static final int TEMA_NEON    = 0;
     public static final int TEMA_FOC     = 1;
     public static final int TEMA_GHEATA  = 2;
@@ -39,6 +49,14 @@ public class Setari {
 
     public void setSunet(boolean v) {
         p.edit().putBoolean("sunet", v).apply();
+    }
+
+    public boolean schimbarePiesaPornita() {
+        return p.getBoolean("schimbare_piesa", false);
+    }
+
+    public void setSchimbarePiesa(boolean v) {
+        p.edit().putBoolean("schimbare_piesa", v).apply();
     }
 
     public int vitezaStart() {
@@ -72,7 +90,9 @@ public class Setari {
     }
 
     public int ultimulMod() {
-        return p.getInt("ultim_mod", MOD_CLASIC);
+        int m = p.getInt("ultim_mod", MOD_CLASIC);
+        if (m < 0 || m >= NR_MODURI || !MOD_DISPONIBIL[m]) return MOD_CLASIC;
+        return m;
     }
 
     public void setUltimulMod(int mod) {
@@ -140,54 +160,52 @@ public class Setari {
          .apply();
     }
 
-    /** paleta de culori a temei curente — nuante cu caracter, nu culori pure */
     public float[][] culoriPiese() {
         switch (tema()) {
 
             case TEMA_FOC:
                 return new float[][] {
-                    {1.00f, 0.78f, 0.12f},   // aur
-                    {1.00f, 0.42f, 0.05f},   // portocaliu ars
-                    {0.92f, 0.12f, 0.06f},   // rosu jar
-                    {1.00f, 0.58f, 0.22f},   // ambra
-                    {0.62f, 0.05f, 0.04f},   // jar stins
-                    {1.00f, 0.88f, 0.42f},   // flacara galbena
-                    {0.82f, 0.24f, 0.02f}    // caramiziu
+                    {1.00f, 0.78f, 0.12f},
+                    {1.00f, 0.42f, 0.05f},
+                    {0.92f, 0.12f, 0.06f},
+                    {1.00f, 0.58f, 0.22f},
+                    {0.62f, 0.05f, 0.04f},
+                    {1.00f, 0.88f, 0.42f},
+                    {0.82f, 0.24f, 0.02f}
                 };
 
             case TEMA_GHEATA:
                 return new float[][] {
-                    {0.55f, 0.92f, 1.00f},   // gheata electrica
-                    {0.86f, 0.97f, 1.00f},   // alb-albastrui
-                    {0.22f, 0.55f, 0.92f},   // albastru profund
-                    {0.50f, 0.78f, 0.90f},   // otel-albastru
-                    {0.10f, 0.32f, 0.78f},   // indigo glacial
-                    {0.92f, 0.98f, 1.00f},   // alb pur
-                    {0.35f, 0.70f, 1.00f}    // azuriu
+                    {0.55f, 0.92f, 1.00f},
+                    {0.86f, 0.97f, 1.00f},
+                    {0.22f, 0.55f, 0.92f},
+                    {0.50f, 0.78f, 0.90f},
+                    {0.10f, 0.32f, 0.78f},
+                    {0.92f, 0.98f, 1.00f},
+                    {0.35f, 0.70f, 1.00f}
                 };
 
             case TEMA_PADURE:
                 return new float[][] {
-                    {0.30f, 0.88f, 0.28f},   // verde crud
-                    {0.78f, 0.92f, 0.18f},   // verde-galbui
-                    {0.10f, 0.55f, 0.28f},   // verde padure
-                    {0.52f, 0.82f, 0.14f},   // lime
-                    {0.48f, 0.34f, 0.14f},   // scoarta
-                    {0.16f, 0.42f, 0.22f},   // verde adanc
-                    {0.88f, 0.82f, 0.28f}    // muschi auriu
+                    {0.30f, 0.88f, 0.28f},
+                    {0.78f, 0.92f, 0.18f},
+                    {0.10f, 0.55f, 0.28f},
+                    {0.52f, 0.82f, 0.14f},
+                    {0.48f, 0.34f, 0.14f},
+                    {0.16f, 0.42f, 0.22f},
+                    {0.88f, 0.82f, 0.28f}
                 };
 
             case TEMA_NEON:
             default:
-                // apus synthwave: roz electric, ambra, violet, turcoaz
                 return new float[][] {
-                    {1.00f, 0.16f, 0.56f},   // roz-magenta electric
-                    {1.00f, 0.66f, 0.16f},   // ambra apus
-                    {0.58f, 0.16f, 0.88f},   // violet neon
-                    {0.14f, 0.88f, 0.80f},   // turcoaz electric
-                    {0.86f, 0.06f, 0.32f},   // rosu-vin profund
-                    {0.22f, 0.48f, 1.00f},   // albastru electric
-                    {1.00f, 0.42f, 0.12f}    // portocaliu apus
+                    {1.00f, 0.16f, 0.56f},
+                    {1.00f, 0.66f, 0.16f},
+                    {0.58f, 0.16f, 0.88f},
+                    {0.14f, 0.88f, 0.80f},
+                    {0.86f, 0.06f, 0.32f},
+                    {0.22f, 0.48f, 1.00f},
+                    {1.00f, 0.42f, 0.12f}
                 };
         }
     }
@@ -197,7 +215,7 @@ public class Setari {
             case TEMA_FOC:    return new float[] {0.07f, 0.02f, 0.02f};
             case TEMA_GHEATA: return new float[] {0.02f, 0.04f, 0.09f};
             case TEMA_PADURE: return new float[] {0.02f, 0.05f, 0.03f};
-            default:          return new float[] {0.05f, 0.02f, 0.09f}; // noapte-mov de apus
+            default:          return new float[] {0.05f, 0.02f, 0.09f};
         }
     }
 
