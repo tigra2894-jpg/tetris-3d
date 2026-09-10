@@ -3,7 +3,8 @@ package com.marius.tetris3d;
 import android.graphics.Color;
 
 /**
- * Ecranul modului TURN: tabla e un cilindru pe care il rotesti cu degetul.
+ * Modul TURN: piesa cade mereu in fata camerei,
+ * iar tu rotesti turnul dedesubt cu degetul.
  */
 public class EcranTurn extends Ecran {
 
@@ -16,23 +17,23 @@ public class EcranTurn extends Ecran {
 
     public JocTurn joc;
     private Particule particule;
+    private float[][] culori;
 
     private float rotatieLumina = 0f;
     private float timpJucat = 0f;
     private int secundeRaportate = 0;
 
-    private float[][] culori;
-
-    /** raza cilindrului, in unitati de lume */
-    private static final float RAZA = 4.6f;
+    private static final float RAZA = 5.2f;
     private float offY;
 
     private float startX, startY;
+    private float ultimX;
     private long startTimp;
     private boolean gestFacut = false;
-    private float acumulatRotire = 0f;
-    private static final float PRAG = 0.055f;
-    private static final float PRAG_ROTIRE = 0.055f;
+    private static final float PRAG = 0.05f;
+
+    /** cat de multe grade roteste o miscare pe toata latimea ecranului */
+    private static final float GRADE_PE_ECRAN = 420f;
 
     private static final float Y_P_TITLU    = 0.30f;
     private static final float Y_P_CONTINUA = 0.50f;
@@ -130,18 +131,18 @@ public class EcranTurn extends Ecran {
 
     @Override
     public void deseneaza(Desenator d) {
-        d.seteazaProiectie(48f, d.raport, 1f, 90f);
+        d.seteazaProiectie(46f, d.raport, 1f, 90f);
 
         float scut = joc.cutremurGlobal;
         float zgX = (float) Math.sin(timp * 47f) * scut * 0.35f;
         float zgY = (float) Math.cos(timp * 39f) * scut * 0.28f;
 
-        d.seteazaCamera(zgX, -1.2f + zgY, 20f, 0f, 0.5f, 0f);
+        d.seteazaCamera(zgX, -0.8f + zgY, 21f, 0f, 0f, 0f);
 
         d.seteazaLumina(
                 (float) Math.sin(Math.toRadians(rotatieLumina)) * 14f,
                 16f,
-                (float) Math.cos(Math.toRadians(rotatieLumina)) * 14f + 10f);
+                18f);
 
         offY = -JocTurn.RANDURI / 2f + 1.0f;
 
@@ -150,9 +151,12 @@ public class EcranTurn extends Ecran {
         podeaTurn(d);
         blocuriTurn(d);
 
-        if (stare == STARE_JOC) piesaCurenta(d);
+        if (stare == STARE_JOC) {
+            fantoma(d);
+            piesaCurenta(d);
+        }
 
-        particuleTurn(d);
+        particule.deseneaza2(d, 0f, offY);
 
         interfata();
 
@@ -160,24 +164,23 @@ public class EcranTurn extends Ecran {
         if (stare == STARE_FINAL) ecranFinal();
     }
 
-    /** transforma coloana+rand in pozitie 3D pe cilindru */
+    /** unghiul, in grade, la care se afla o coloana pe cilindru */
+    private float unghiColoana(float coloana) {
+        return coloana * JocTurn.PAS_GRADE + joc.unghiTurn;
+    }
+
     private float[] pozitie(float coloana, float rand) {
-        float pasGrade = 360f / JocTurn.COLOANE;
-        float unghi = (float) Math.toRadians(coloana * pasGrade + joc.unghiTurn);
-
-        float x = (float) Math.sin(unghi) * RAZA;
-        float z = (float) Math.cos(unghi) * RAZA - RAZA * 0.4f;
+        float u = (float) Math.toRadians(unghiColoana(coloana));
+        float x = (float) Math.sin(u) * RAZA;
+        float z = (float) Math.cos(u) * RAZA - RAZA;
         float y = offY + rand;
-
         return new float[]{x, y, z};
     }
 
-    /** cat de vizibila e o coloana: 1 in fata, 0 in spate */
+    /** 1 = fix in fata, 0 = in spate */
     private float vizibilitate(float coloana) {
-        float pasGrade = 360f / JocTurn.COLOANE;
-        float unghi = (float) Math.toRadians(coloana * pasGrade + joc.unghiTurn);
-        float fata = (float) Math.cos(unghi);
-        return Math.max(0f, fata);
+        float u = (float) Math.toRadians(unghiColoana(coloana));
+        return Math.max(0f, (float) Math.cos(u));
     }
 
     private void podeaTurn(Desenator d) {
@@ -186,23 +189,25 @@ public class EcranTurn extends Ecran {
 
         for (int c = 0; c < JocTurn.COLOANE; c++) {
             float viz = vizibilitate(c);
-            if (viz < 0.02f) continue;
+            if (viz < 0.03f) continue;
 
             boolean tinta = activ && joc.coloanaTinta(c);
 
             float r = 0.18f, g = 0.22f, b = 0.38f;
-            float a = (0.35f + viz * 0.55f);
+            float a = 0.25f + viz * 0.65f;
 
             if (tinta) {
                 float caldura = ap * ap;
                 r = 0.18f + caldura * 0.80f;
                 g = 0.22f + caldura * 0.26f;
                 b = 0.38f - caldura * 0.32f;
-                a = Math.min(1f, a + caldura * 0.2f);
+                a = Math.min(1f, a + caldura * 0.25f);
             }
 
             float[] p = pozitie(c, -1f);
-            d.cub(p[0], p[1], p[2], r, g, b, a, 0.86f);
+            d.cubRotit(p[0], p[1], p[2],
+                    -unghiColoana(c), 0f, 1f, 0f,
+                    r, g, b, a, 0.86f);
         }
     }
 
@@ -217,7 +222,7 @@ public class EcranTurn extends Ecran {
                 if (val == 0) continue;
 
                 float viz = vizibilitate(c);
-                if (viz < 0.02f) continue;
+                if (viz < 0.03f) continue;
 
                 float[] cul = culori[val - 1];
 
@@ -227,16 +232,33 @@ public class EcranTurn extends Ecran {
 
                 float dy = (float) Math.cos(timp * 53f + c * 1.7f) * trem * 0.07f;
 
-                float lum = (0.35f + viz * 0.65f)
+                float lum = (0.30f + viz * 0.70f)
                         * (1f + (simte ? ap * 0.4f : 0f) + trem * 0.2f);
 
                 float[] p = pozitie(c, r);
-                d.cub(p[0], p[1] + dy, p[2],
+                d.cubRotit(p[0], p[1] + dy, p[2],
+                        -unghiColoana(c), 0f, 1f, 0f,
                         Math.min(1f, cul[0] * lum),
                         Math.min(1f, cul[1] * lum),
                         Math.min(1f, cul[2] * lum),
-                        0.35f + viz * 0.65f, 0.92f);
+                        0.30f + viz * 0.70f, 0.94f);
             }
+        }
+    }
+
+    private void fantoma(Desenator d) {
+        int[][] forma = joc.formaCurenta();
+        int yF = joc.pozitieFantoma();
+        float[] cul = culori[joc.tipCurent];
+        float p = 0.16f + 0.12f * puls(2.6f);
+
+        for (int i = 0; i < 4; i++) {
+            int c = joc.coloanaPiesei(forma[i][0]);
+            float[] pz = pozitie(c, yF + forma[i][1]);
+
+            d.cubRotit(pz[0], pz[1], pz[2],
+                    -unghiColoana(c), 0f, 1f, 0f,
+                    cul[0], cul[1], cul[2], p, 0.90f);
         }
     }
 
@@ -245,21 +267,14 @@ public class EcranTurn extends Ecran {
         float[] cul = culori[joc.tipCurent];
 
         for (int i = 0; i < 4; i++) {
-            int c = JocTurn.normX(joc.pieseX + forma[i][0]);
+            int c = joc.coloanaPiesei(forma[i][0]);
             float rand = joc.pieseYVizual() + forma[i][1];
-
-            float viz = vizibilitate(c);
             float[] p = pozitie(c, rand);
 
-            d.cub(p[0], p[1], p[2],
-                    cul[0], cul[1], cul[2],
-                    Math.max(0.25f, 0.35f + viz * 0.65f), 0.94f);
+            d.cubRotit(p[0], p[1], p[2],
+                    -unghiColoana(c), 0f, 1f, 0f,
+                    cul[0], cul[1], cul[2], 1f, 0.96f);
         }
-    }
-
-    private void particuleTurn(Desenator d) {
-        // particulele se deseneaza plat, in fata turnului
-        particule.deseneaza2(d, -JocTurn.COLOANE / 2f + 0.5f, offY);
     }
 
     private void interfata() {
@@ -277,8 +292,8 @@ public class EcranTurn extends Ecran {
 
         if (stare == STARE_JOC) {
             app.ui.textCentrat("| |", 0.5f, 0.05f, 0.026f, Color.rgb(190, 200, 230));
-            app.ui.textCentrat("TRAGE CA SA ROTESTI TURNUL", 0.5f, 0.955f, 0.016f,
-                    Color.rgb(120, 128, 152));
+            app.ui.textCentrat("TRAGE STANGA-DREAPTA CA SA ROTESTI TURNUL",
+                    0.5f, 0.955f, 0.014f, Color.rgb(120, 128, 152));
         }
     }
 
@@ -362,9 +377,10 @@ public class EcranTurn extends Ecran {
 
         startX = x;
         startY = y;
+        ultimX = x;
         startTimp = System.currentTimeMillis();
         gestFacut = false;
-        acumulatRotire = 0f;
+        joc.degetJos();
         return true;
     }
 
@@ -372,25 +388,32 @@ public class EcranTurn extends Ecran {
     public boolean tragere(float x, float y, float dx, float dy) {
         if (stare != STARE_JOC) return true;
 
-        float difX = x - startX;
-        float difY = y - startY;
+        float difTotalX = x - startX;
+        float difTotalY = y - startY;
 
-        // tragere laterala = rotirea turnului
-        if (Math.abs(difX) > PRAG_ROTIRE && Math.abs(difX) > Math.abs(difY)) {
-            joc.rotesteTurn(difX > 0 ? -1 : 1);
-            startX = x;
-            startY = y;
-            gestFacut = true;
-        } else if (difY > PRAG && Math.abs(difY) > Math.abs(difX)) {
+        // tragere in jos, clara: coboara piesa
+        if (difTotalY > PRAG * 1.6f && Math.abs(difTotalY) > Math.abs(difTotalX) * 1.5f) {
             joc.coboaraRapid();
             startY = y;
             gestFacut = true;
+            ultimX = x;
+            return true;
+        }
+
+        // orice miscare laterala roteste turnul, continuu, urmarind degetul
+        float deltaX = x - ultimX;
+        if (Math.abs(deltaX) > 0.0005f) {
+            joc.rotesteContinuu(-deltaX * GRADE_PE_ECRAN);
+            ultimX = x;
+            if (Math.abs(difTotalX) > 0.03f) gestFacut = true;
         }
         return true;
     }
 
     @Override
     public boolean ridicare(float x, float y) {
+        joc.degetSus();
+
         if (stare != STARE_JOC) return true;
 
         long durata = System.currentTimeMillis() - startTimp;
@@ -399,7 +422,7 @@ public class EcranTurn extends Ecran {
 
         if (!gestFacut && durata < 250 && dx < PRAG && dy < PRAG) {
             joc.roteste();
-        } else if ((startY - y) > PRAG * 2.2f) {
+        } else if ((startY - y) > PRAG * 2.4f && dx < PRAG * 2f) {
             joc.trantesteJos();
         }
         return true;
@@ -417,4 +440,4 @@ public class EcranTurn extends Ecran {
         }
         return false;
     }
-                    }
+}
