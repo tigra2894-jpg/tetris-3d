@@ -1,11 +1,11 @@
-
 package com.marius.tetris3d;
 
 import java.util.Random;
 
 /**
- * Modul TURN: tabla e un cilindru cu 12 fete care se inchide in cerc.
- * Coloana 11 e vecina cu coloana 0, deci piesele pot trece dintr-o parte in alta.
+ * Modul TURN, varianta A:
+ * piesa cade mereu in fata camerei, iar tu rotesti turnul dedesubt
+ * ca sa alegi pe ce fata aterizeaza.
  * O linie se sterge doar cand e completa pe toate cele 12 coloane.
  */
 public class JocTurn {
@@ -39,7 +39,6 @@ public class JocTurn {
     public int tipCurent;
     public int tipUrmator;
     public int rotatie;
-    public int pieseX;     // coloana, 0..COLOANE-1, se inchide in cerc
     public int pieseY;
 
     public int scor = 0;
@@ -58,9 +57,12 @@ public class JocTurn {
     public float vitezaInitiala = 0.75f;
     public float[][] culori;
 
-    /** unghiul de rotatie al turnului, in grade; se schimba cu degetul */
+    /** unghiul turnului in grade; degetul il schimba direct */
     public float unghiTurn = 0f;
-    public float unghiTinta = 0f;
+
+    /** cat de repede se opreste turnul dupa ce ridici degetul */
+    private float vitezaUnghi = 0f;
+    private boolean degetPeEcran = false;
 
     private final Random rnd = new Random();
     private float ceas = 0f;
@@ -68,6 +70,7 @@ public class JocTurn {
     private float alunecare = 0f;
 
     private static final int LINII_PE_NIVEL = 6;
+    public static final float PAS_GRADE = 360f / COLOANE;
 
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
@@ -77,34 +80,35 @@ public class JocTurn {
         pieseNoua();
     }
 
-    /** coloana normalizata: se inchide in cerc */
     public static int normX(int x) {
         int n = x % COLOANE;
         if (n < 0) n += COLOANE;
         return n;
     }
 
+    /** coloana aflata acum exact in fata camerei */
+    public int coloanaDinFata() {
+        int c = Math.round(-unghiTurn / PAS_GRADE);
+        return normX(c);
+    }
+
+    /** coloana pe care sta un patratel al piesei; piesa e mereu in fata */
+    public int coloanaPiesei(int offsetX) {
+        return normX(coloanaDinFata() + offsetX - 1);
+    }
+
     private void pieseNoua() {
         tipCurent = tipUrmator;
         tipUrmator = rnd.nextInt(7);
         rotatie = 0;
-        // piesa apare pe fata din fata a turnului
-        pieseX = coloanaDinFata();
         pieseY = RANDURI - 1;
         alunecare = 0f;
         ceas = 0f;
-        if (ciocnire(pieseX, pieseY, rotatie)) {
+        if (ciocnire(pieseY, rotatie)) {
             terminat = true;
             if (scor > record) record = scor;
             if (sunet != null) sunet.final_();
         }
-    }
-
-    /** ce coloana e acum in fata camerei, dupa unghiul turnului */
-    public int coloanaDinFata() {
-        float pasGrade = 360f / COLOANE;
-        int c = Math.round(-unghiTurn / pasGrade);
-        return normX(c);
     }
 
     public void jocNou() {
@@ -119,7 +123,7 @@ public class JocTurn {
         terminat = false;
         cutremurGlobal = 0f;
         unghiTurn = 0f;
-        unghiTinta = 0f;
+        vitezaUnghi = 0f;
         tipUrmator = rnd.nextInt(7);
         pieseNoua();
     }
@@ -128,10 +132,11 @@ public class JocTurn {
         return PIESE[tipCurent][rotatie];
     }
 
-    private boolean ciocnire(int px, int py, int rot) {
+    /** verifica daca piesa incape la inaltimea py, cu rotatia rot */
+    private boolean ciocnire(int py, int rot) {
         int[][] f = PIESE[tipCurent][rot];
         for (int i = 0; i < 4; i++) {
-            int x = normX(px + f[i][0]);
+            int x = coloanaPiesei(f[i][0]);
             int y = py + f[i][1] - 3;
             if (y < 0) return true;
             if (y < RANDURI && tabla[y][x] != 0) return true;
@@ -139,33 +144,46 @@ public class JocTurn {
         return false;
     }
 
-    /** roteste turnul cu o fata; piesa ramane in fata camerei */
-    public void rotesteTurn(int directie) {
-        if (terminat) return;
-        float pasGrade = 360f / COLOANE;
-        unghiTinta -= directie * pasGrade;
+    // ---------- rotirea turnului cu degetul ----------
 
-        int nouX = normX(pieseX + directie);
-        if (!ciocnire(nouX, pieseY, rotatie)) {
-            pieseX = nouX;
-        }
-        if (sunet != null) sunet.mutare();
+    public void degetJos() {
+        degetPeEcran = true;
+        vitezaUnghi = 0f;
     }
 
-    /** muta piesa lateral, fara sa roteasca turnul */
-    public void muta(int dir) {
+    /** deltaGrade: cat s-a miscat degetul, transformat in grade */
+    public void rotesteContinuu(float deltaGrade) {
         if (terminat) return;
-        int nouX = normX(pieseX + dir);
-        if (!ciocnire(nouX, pieseY, rotatie)) {
-            pieseX = nouX;
-            if (sunet != null) sunet.mutare();
+        unghiTurn += deltaGrade;
+        vitezaUnghi = deltaGrade;
+    }
+
+    public void degetSus() {
+        degetPeEcran = false;
+    }
+
+    /** aduce turnul la cea mai apropiata fata, ca piesele sa stea aliniate */
+    private void alinieazaTurn(float dt) {
+        if (degetPeEcran) return;
+
+        // inertie scurta dupa ce ridici degetul
+        if (Math.abs(vitezaUnghi) > 0.05f) {
+            unghiTurn += vitezaUnghi;
+            vitezaUnghi *= 0.88f;
+            return;
         }
+        vitezaUnghi = 0f;
+
+        float tinta = Math.round(unghiTurn / PAS_GRADE) * PAS_GRADE;
+        float dif = tinta - unghiTurn;
+        unghiTurn += dif * Math.min(1f, dt * 12f);
+        if (Math.abs(dif) < 0.05f) unghiTurn = tinta;
     }
 
     public void roteste() {
         if (terminat) return;
         int nou = (rotatie + 1) % 4;
-        if (!ciocnire(pieseX, pieseY, nou)) {
+        if (!ciocnire(pieseY, nou)) {
             rotatie = nou;
             if (sunet != null) sunet.rotire();
         }
@@ -173,7 +191,7 @@ public class JocTurn {
 
     public void coboaraRapid() {
         if (terminat) return;
-        if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+        if (!ciocnire(pieseY - 1, rotatie)) {
             pieseY--;
             ceas = 0f;
             alunecare = 0f;
@@ -183,7 +201,7 @@ public class JocTurn {
 
     public void trantesteJos() {
         if (terminat) return;
-        while (!ciocnire(pieseX, pieseY - 1, rotatie)) pieseY--;
+        while (!ciocnire(pieseY - 1, rotatie)) pieseY--;
         alunecare = 0f;
         ceas = 0f;
         cutremurGlobal = 1f;
@@ -193,7 +211,7 @@ public class JocTurn {
 
     public int pozitieFantoma() {
         int y = pieseY;
-        while (!ciocnire(pieseX, y - 1, rotatie)) y--;
+        while (!ciocnire(y - 1, rotatie)) y--;
         return y - 3;
     }
 
@@ -214,7 +232,7 @@ public class JocTurn {
     public boolean coloanaTinta(int c) {
         int[][] f = formaCurenta();
         for (int i = 0; i < 4; i++) {
-            if (normX(pieseX + f[i][0]) == c) return true;
+            if (coloanaPiesei(f[i][0]) == c) return true;
         }
         return false;
     }
@@ -222,7 +240,7 @@ public class JocTurn {
     private void aseaza(boolean cuSunet) {
         int[][] f = formaCurenta();
         for (int i = 0; i < 4; i++) {
-            int x = normX(pieseX + f[i][0]);
+            int x = coloanaPiesei(f[i][0]);
             int y = pieseY + f[i][1] - 3;
             if (y >= 0 && y < RANDURI) {
                 tabla[y][x] = tipCurent + 1;
@@ -259,7 +277,6 @@ public class JocTurn {
             int nivelVechi = nivel;
             linii += sterse;
 
-            // linia completa pe tot turul valoreaza mai mult
             switch (sterse) {
                 case 1: scor += 250 * nivel; break;
                 case 2: scor += 700 * nivel; break;
@@ -292,17 +309,13 @@ public class JocTurn {
 
     public void actualizeaza(float dt) {
         stingeEfecte(dt);
-
-        // rotatia turnului se apropie lin de unghiul tinta
-        float dif = unghiTinta - unghiTurn;
-        unghiTurn += dif * Math.min(1f, dt * 8f);
-        if (Math.abs(dif) < 0.05f) unghiTurn = unghiTinta;
+        alinieazaTurn(dt);
 
         if (terminat) return;
 
         ceas += dt;
 
-        if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+        if (!ciocnire(pieseY - 1, rotatie)) {
             alunecare = -(ceas / vitezaCadere);
             if (alunecare < -1f) alunecare = -1f;
         } else {
@@ -312,7 +325,7 @@ public class JocTurn {
         if (ceas >= vitezaCadere) {
             ceas = 0f;
             alunecare = 0f;
-            if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
+            if (!ciocnire(pieseY - 1, rotatie)) {
                 pieseY--;
             } else {
                 aseaza(true);
@@ -329,14 +342,10 @@ public class JocTurn {
         if (cutremurGlobal < 0f) cutremurGlobal = 0f;
     }
 
-    /** cate randuri sunt complete pe tot turul, pentru afisare */
-    public int randuriAproapeComplete() {
+    /** cate coloane sunt ocupate pe un rand, pentru afisaj */
+    public int coloanePline(int rand) {
         int n = 0;
-        for (int r = 0; r < RANDURI; r++) {
-            int pline = 0;
-            for (int c = 0; c < COLOANE; c++) if (tabla[r][c] != 0) pline++;
-            if (pline >= COLOANE - 2 && pline < COLOANE) n++;
-        }
+        for (int c = 0; c < COLOANE; c++) if (tabla[rand][c] != 0) n++;
         return n;
     }
 }
