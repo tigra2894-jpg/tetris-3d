@@ -9,6 +9,9 @@ public class Joc {
 
     public int[][] tabla = new int[RANDURI][COLOANE];
 
+    /** cate crapaturi are fiecare bloc; la 3 se sparge singur (doar modul sticla) */
+    public int[][] crapaturi = new int[RANDURI][COLOANE];
+
     private static final int[][][][] PIESE = {
         {{{0,2},{1,2},{2,2},{3,2}}, {{2,0},{2,1},{2,2},{2,3}},
          {{0,1},{1,1},{2,1},{3,1}}, {{1,0},{1,1},{1,2},{1,3}}},
@@ -43,6 +46,7 @@ public class Joc {
 
     public int pieseAsezate = 0;
     public int tetrisuriFacute = 0;
+    public int blocuriSparte = 0;
 
     public boolean terminat = false;
 
@@ -60,6 +64,7 @@ public class Joc {
     private float alunecare = 0f;
 
     private static final int LINII_PE_NIVEL = 8;
+    private static final int CRAPATURI_MAX = 3;
 
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
@@ -85,14 +90,18 @@ public class Joc {
     }
 
     public void jocNou() {
-        for (int r = 0; r < RANDURI; r++)
-            for (int c = 0; c < COLOANE; c++)
+        for (int r = 0; r < RANDURI; r++) {
+            for (int c = 0; c < COLOANE; c++) {
                 tabla[r][c] = 0;
-        for (int r = 0; r < RANDURI; r++) tremurRand[r] = 0f;
+                crapaturi[r][c] = 0;
+            }
+            tremurRand[r] = 0f;
+        }
 
         scor = 0; linii = 0; nivel = 1;
         pieseAsezate = 0;
         tetrisuriFacute = 0;
+        blocuriSparte = 0;
         vitezaCadere = vitezaInitiala;
         terminat = false;
         cutremurGlobal = 0f;
@@ -137,22 +146,25 @@ public class Joc {
         if (reusit && sunet != null) sunet.rotire();
     }
 
-    /** trece piesa curenta la urmatoarea combinatie tip+rotatie,
-     *  cauta agresiv un loc valid ca sa nu se blocheze niciodata */
+    /** cicleaza prin cele 7 piese; la piesa I trece si prin varianta verticala */
     public void schimbaForma() {
         if (terminat) return;
-
-        int nouRot = rotatie + 1;
-        int nouTip = tipCurent;
-        if (nouRot >= 4) {
-            nouRot = 0;
-            nouTip = (tipCurent + 1) % 7;
-        }
 
         int vechiTip = tipCurent;
         int vechiRot = rotatie;
         int vechiX = pieseX;
         int vechiY = pieseY;
+
+        int nouTip;
+        int nouRot;
+
+        if (tipCurent == 0 && rotatie == 0) {
+            nouTip = 0;
+            nouRot = 1;
+        } else {
+            nouTip = (tipCurent + 1) % 7;
+            nouRot = 0;
+        }
 
         tipCurent = nouTip;
         rotatie = nouRot;
@@ -167,8 +179,6 @@ public class Joc {
         }
     }
 
-    /** cauta un loc valid pentru piesa curenta, incercand mai multe pozitii pe X
-     *  si ridicand-o pe Y daca e nevoie; modifica pieseX/pieseY direct */
     private boolean gasesteLocValid() {
         int yOriginal = pieseY;
 
@@ -224,7 +234,7 @@ public class Joc {
         ceas = 0f;
         cutremurGlobal = 1f;
         if (sunet != null) sunet.trantire();
-        aseaza(false);
+        aseaza(false, true);
     }
 
     public int pozitieFantoma() {
@@ -255,22 +265,84 @@ public class Joc {
         return false;
     }
 
-    private void aseaza(boolean cuSunet) {
+    /** cuSunet = aterizare normala; impactTare = trantit, crapa mai mult */
+    private void aseaza(boolean cuSunet, boolean impactTare) {
         int[][] f = formaCurenta();
+
         for (int i = 0; i < 4; i++) {
             int x = pieseX + f[i][0];
             int y = pieseY + f[i][1] - 3;
             if (y >= 0 && y < RANDURI && x >= 0 && x < COLOANE) {
                 tabla[y][x] = tipCurent + 1;
+                crapaturi[y][x] = 0;
                 tremurRand[y] = 1f;
                 if (y > 0) tremurRand[y - 1] = 0.7f;
             }
         }
-        cutremurGlobal = Math.max(cutremurGlobal, 0.55f);
+
+        cutremurGlobal = Math.max(cutremurGlobal, impactTare ? 1f : 0.55f);
         pieseAsezate++;
         if (cuSunet && sunet != null) sunet.aterizare();
+
+        if (stilSticla) {
+            aplicaCrapaturi(impactTare);
+        }
+
         verificaLinii();
         pieseNoua();
+    }
+
+    /** in modul sticla, impactul crapa blocurile de sub piesa asezata */
+    private void aplicaCrapaturi(boolean impactTare) {
+        int[][] f = formaCurenta();
+        int adancime = impactTare ? 3 : 2;
+        int putere = impactTare ? 2 : 1;
+
+        for (int i = 0; i < 4; i++) {
+            int x = pieseX + f[i][0];
+            int yBaza = pieseY + f[i][1] - 3;
+
+            for (int dy = 1; dy <= adancime; dy++) {
+                int y = yBaza - dy;
+                if (y < 0 || y >= RANDURI) continue;
+                if (x < 0 || x >= COLOANE) continue;
+                if (tabla[y][x] == 0) continue;
+
+                int adaugat = Math.max(1, putere - (dy - 1));
+                crapaturi[y][x] += adaugat;
+            }
+        }
+
+        spargeBlocurileCrapate();
+    }
+
+    /** blocurile care au ajuns la 3 crapaturi se sparg si dispar */
+    private void spargeBlocurileCrapate() {
+        int sparte = 0;
+
+        for (int r = 0; r < RANDURI; r++) {
+            for (int c = 0; c < COLOANE; c++) {
+                if (tabla[r][c] != 0 && crapaturi[r][c] >= CRAPATURI_MAX) {
+                    if (particule != null && culori != null) {
+                        int[] unRand = new int[COLOANE];
+                        unRand[c] = tabla[r][c];
+                        particule.explozieColorata(r, COLOANE, unRand, culori);
+                    }
+                    tabla[r][c] = 0;
+                    crapaturi[r][c] = 0;
+                    tremurRand[r] = 1f;
+                    sparte++;
+                }
+            }
+        }
+
+        if (sparte > 0) {
+            blocuriSparte += sparte;
+            scor += 25 * sparte * nivel;
+            if (scor > record) record = scor;
+            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.3f);
+            if (sunet != null) sunet.linie();
+        }
     }
 
     private void verificaLinii() {
@@ -290,8 +362,12 @@ public class Joc {
                 }
                 for (int rr = r; rr < RANDURI - 1; rr++) {
                     System.arraycopy(tabla[rr + 1], 0, tabla[rr], 0, COLOANE);
+                    System.arraycopy(crapaturi[rr + 1], 0, crapaturi[rr], 0, COLOANE);
                 }
-                for (int c = 0; c < COLOANE; c++) tabla[RANDURI - 1][c] = 0;
+                for (int c = 0; c < COLOANE; c++) {
+                    tabla[RANDURI - 1][c] = 0;
+                    crapaturi[RANDURI - 1][c] = 0;
+                }
                 sterse++;
                 r--;
             }
@@ -354,7 +430,7 @@ public class Joc {
             if (!ciocnire(pieseX, pieseY - 1, rotatie)) {
                 pieseY--;
             } else {
-                aseaza(true);
+                aseaza(true, false);
             }
         }
     }
