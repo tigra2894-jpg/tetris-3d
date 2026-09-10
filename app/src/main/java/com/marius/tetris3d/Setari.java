@@ -19,11 +19,11 @@ public class Setari {
 
     public static final boolean[] MOD_DISPONIBIL = {
         true,   // CLASIC
-        false,  // TURN - in lucru
-        false,  // GRAVITATIE
+        true,   // TURN
+        false,  // GRAVITATIE - in lucru
         true,   // STICLA
-        false,  // VIU
-        false   // SPATIU
+        false,  // VIU - in lucru
+        false   // SPATIU - in lucru
     };
 
     public static final int TEMA_NEON    = 0;
