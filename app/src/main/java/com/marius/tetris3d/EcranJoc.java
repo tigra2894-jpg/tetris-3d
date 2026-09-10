@@ -42,8 +42,6 @@ public class EcranJoc extends Ecran {
     private static final float Y_F_DIN_NOU = 0.72f;
     private static final float Y_F_MENIU   = 0.82f;
 
-    private float stralucireButon = 0f;
-
     public EcranJoc(Aplicatie app) {
         super(app);
         particule = new Particule();
@@ -52,7 +50,6 @@ public class EcranJoc extends Ecran {
         joc.sunet = app.sunet;
     }
 
-    /** modLiber = true activeaza schimbarea piesei curente la apasare pe tabla */
     public void pregateste(int modNou, boolean liber) {
         mod = modNou;
         modLiber = liber;
@@ -71,7 +68,6 @@ public class EcranJoc extends Ecran {
     public void laIntrare() {
         super.laIntrare();
         culori = app.setari.culoriPiese();
-        stralucireButon = 0f;
     }
 
     @Override
@@ -95,9 +91,6 @@ public class EcranJoc extends Ecran {
 
         rotatieLumina += dt * 6f;
         leganare += dt * 0.28f;
-
-        stralucireButon -= dt * 3f;
-        if (stralucireButon < 0f) stralucireButon = 0f;
 
         particule.actualizeaza(dt);
 
@@ -207,7 +200,7 @@ public class EcranJoc extends Ecran {
         boolean activ = (stare == STARE_JOC);
         float ap = activ ? joc.apropiere() : 0f;
         int yFantoma = activ ? joc.pozitieFantoma() : -1;
-        float alfaBloc = joc.stilSticla ? 0.62f : 1f;
+        float alfaBaza = joc.stilSticla ? 0.62f : 1f;
 
         for (int r = 0; r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
@@ -225,11 +218,33 @@ public class EcranJoc extends Ecran {
 
                 float lum = 1f + (simte ? ap * 0.45f : 0f) + trem * 0.20f;
 
-                d.cub(offX + c + dx, offY + r + dy, 0f,
-                        Math.min(1f, cul[0] * lum),
-                        Math.min(1f, cul[1] * lum),
-                        Math.min(1f, cul[2] * lum),
-                        alfaBloc, 1f);
+                float rr = Math.min(1f, cul[0] * lum);
+                float gg = Math.min(1f, cul[1] * lum);
+                float bb = Math.min(1f, cul[2] * lum);
+                float alfa = alfaBaza;
+                float scara = 1f;
+
+                // in modul sticla, crapaturile decoloreaza si micsoreaza blocul
+                if (joc.stilSticla) {
+                    int cr = joc.crapaturi[r][c];
+                    if (cr > 0) {
+                        float uzura = Math.min(1f, cr / 3f);
+                        // culoarea se spala spre alb-cenusiu
+                        rr = rr + (0.85f - rr) * uzura * 0.7f;
+                        gg = gg + (0.85f - gg) * uzura * 0.7f;
+                        bb = bb + (0.90f - bb) * uzura * 0.7f;
+                        alfa = alfaBaza + uzura * 0.25f;
+                        scara = 1f - uzura * 0.10f;
+
+                        // blocul aproape spart tremura singur
+                        if (cr >= 2) {
+                            dx += (float) Math.sin(timp * 33f + c * 3.1f) * 0.05f;
+                            dy += (float) Math.cos(timp * 29f + r * 2.7f) * 0.04f;
+                        }
+                    }
+                }
+
+                d.cub(offX + c + dx, offY + r + dy, 0f, rr, gg, bb, alfa, scara);
             }
         }
     }
@@ -276,8 +291,13 @@ public class EcranJoc extends Ecran {
 
         if (stare == STARE_JOC) {
             app.ui.textCentrat("| |", 0.5f, 0.05f, 0.026f, Color.rgb(190, 200, 230));
+
             if (modLiber) {
-                app.ui.textCentrat("LIBER", 0.5f, 0.09f, 0.016f, Color.rgb(190, 160, 255));
+                app.ui.textCentrat("LIBER", 0.5f, 0.088f, 0.016f, Color.rgb(190, 160, 255));
+            }
+            if (joc.stilSticla && joc.blocuriSparte > 0) {
+                app.ui.textCentrat("SPARTE " + joc.blocuriSparte, 0.5f,
+                        modLiber ? 0.118f : 0.088f, 0.015f, Color.rgb(150, 220, 240));
             }
         }
     }
