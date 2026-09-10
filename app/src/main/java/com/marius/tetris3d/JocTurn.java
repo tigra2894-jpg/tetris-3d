@@ -3,52 +3,46 @@ package com.marius.tetris3d;
 import java.util.Random;
 
 /**
- * Modul TURN, varianta A:
- * piesa cade mereu in fata camerei, iar tu rotesti turnul dedesubt
- * ca sa alegi pe ce fata aterizeaza.
- * O linie se sterge doar cand e completa pe toate cele 12 coloane.
+ * Modul TURN: o baza circulara cu 8 pozitii, pe care o invarti cu degetul.
+ * Piesa cade mereu in centrul ecranului, pe pozitia din fata.
+ * Cand un inel complet (toate cele 8 pozitii de pe un nivel) e plin, dispare.
  */
 public class JocTurn {
 
-    public static final int COLOANE = 12;
-    public static final int RANDURI = 18;
+    /** cate pozitii are cercul de baza */
+    public static final int POZITII = 8;
+    /** cat de inalt poate creste turnul */
+    public static final int NIVELE = 16;
 
-    public int[][] tabla = new int[RANDURI][COLOANE];
+    /** turnul: [nivel][pozitie] = culoarea blocului, 0 = gol */
+    public int[][] turn = new int[NIVELE][POZITII];
 
-    private static final int[][][][] PIESE = {
-        {{{0,2},{1,2},{2,2},{3,2}}, {{2,0},{2,1},{2,2},{2,3}},
-         {{0,1},{1,1},{2,1},{3,1}}, {{1,0},{1,1},{1,2},{1,3}}},
-        {{{1,1},{2,1},{1,2},{2,2}}, {{1,1},{2,1},{1,2},{2,2}},
-         {{1,1},{2,1},{1,2},{2,2}}, {{1,1},{2,1},{1,2},{2,2}}},
-        {{{1,1},{0,2},{1,2},{2,2}}, {{1,1},{1,2},{2,2},{1,3}},
-         {{0,2},{1,2},{2,2},{1,3}}, {{1,1},{0,2},{1,2},{1,3}}},
-        {{{1,1},{2,1},{0,2},{1,2}}, {{1,1},{1,2},{2,2},{2,3}},
-         {{1,2},{2,2},{0,3},{1,3}}, {{0,1},{0,2},{1,2},{1,3}}},
-        {{{0,1},{1,1},{1,2},{2,2}}, {{2,1},{1,2},{2,2},{1,3}},
-         {{0,2},{1,2},{1,3},{2,3}}, {{1,1},{0,2},{1,2},{0,3}}},
-        {{{0,1},{0,2},{1,2},{2,2}}, {{1,1},{2,1},{1,2},{1,3}},
-         {{0,2},{1,2},{2,2},{2,3}}, {{1,1},{1,2},{0,3},{1,3}}},
-        {{{2,1},{0,2},{1,2},{2,2}}, {{1,1},{1,2},{1,3},{2,3}},
-         {{0,2},{1,2},{2,2},{0,3}}, {{0,1},{1,1},{1,2},{1,3}}}
+    /** formele posibile ale pieselor, ca latime pe cerc (1, 2 sau 3 pozitii) */
+    private static final int[][] FORME = {
+        {1},           // un bloc
+        {1, 1},        // doua alaturate
+        {1, 1, 1},     // trei alaturate
+        {1, 0, 1},     // doua cu gol la mijloc
+        {1, 1},        // doua alaturate
+        {1},           // un bloc
+        {1, 1, 1}      // trei alaturate
     };
 
-    public static int[][] formaPiesei(int tip, int rot) {
-        return PIESE[tip][rot];
+    /** cate blocuri pune fiecare forma */
+    private static int latimeForma(int tip) {
+        return FORME[tip].length;
     }
 
     public int tipCurent;
     public int tipUrmator;
-    public int rotatie;
-    public int pieseY;
+    public float inaltimePiesa;   // inaltimea la care e piesa acum, in nivele
 
     public int scor = 0;
     public int record = 0;
-    public int linii = 0;
+    public int inele = 0;         // cate inele complete ai facut
     public int nivel = 1;
 
     public int pieseAsezate = 0;
-    public int tetrisuriFacute = 0;
-
     public boolean terminat = false;
 
     public Particule particule;
@@ -57,104 +51,101 @@ public class JocTurn {
     public float vitezaInitiala = 0.75f;
     public float[][] culori;
 
-    /** unghiul turnului in grade; degetul il schimba direct */
-    public float unghiTurn = 0f;
-
-    /** cat de repede se opreste turnul dupa ce ridici degetul */
+    /** unghiul bazei, in grade; degetul il schimba direct */
+    public float unghiBaza = 0f;
     private float vitezaUnghi = 0f;
     private boolean degetPeEcran = false;
 
     private final Random rnd = new Random();
-    private float ceas = 0f;
     private float vitezaCadere = 0.75f;
-    private float alunecare = 0f;
 
-    private static final int LINII_PE_NIVEL = 6;
-    public static final float PAS_GRADE = 360f / COLOANE;
+    public static final float PAS_GRADE = 360f / POZITII;
 
-    public final float[] tremurRand = new float[RANDURI];
+    /** tremurul fiecarui nivel, pentru efect de impact */
+    public final float[] tremurNivel = new float[NIVELE];
     public float cutremurGlobal = 0f;
 
     public JocTurn() {
-        tipUrmator = rnd.nextInt(7);
+        tipUrmator = rnd.nextInt(FORME.length);
         pieseNoua();
     }
 
-    public static int normX(int x) {
-        int n = x % COLOANE;
-        if (n < 0) n += COLOANE;
+    public static int normP(int p) {
+        int n = p % POZITII;
+        if (n < 0) n += POZITII;
         return n;
     }
 
-    /** coloana aflata acum exact in fata camerei */
-    public int coloanaDinFata() {
-        int c = Math.round(-unghiTurn / PAS_GRADE);
-        return normX(c);
+    /** pozitia aflata acum exact in fata camerei */
+    public int pozitiaDinFata() {
+        int p = Math.round(-unghiBaza / PAS_GRADE);
+        return normP(p);
     }
 
-    /** coloana pe care sta un patratel al piesei; piesa e mereu in fata */
-    public int coloanaPiesei(int offsetX) {
-        return normX(coloanaDinFata() + offsetX - 1);
+    /** pozitiile pe care le va ocupa piesa curenta */
+    public int[] pozitiiPiesa() {
+        int[] forma = FORME[tipCurent];
+        int centru = pozitiaDinFata();
+        int start = centru - forma.length / 2;
+
+        int[] rez = new int[forma.length];
+        for (int i = 0; i < forma.length; i++) {
+            rez[i] = (forma[i] == 1) ? normP(start + i) : -1;
+        }
+        return rez;
     }
 
     private void pieseNoua() {
         tipCurent = tipUrmator;
-        tipUrmator = rnd.nextInt(7);
-        rotatie = 0;
-        pieseY = RANDURI - 1;
-        alunecare = 0f;
-        ceas = 0f;
-        if (ciocnire(pieseY, rotatie)) {
+        tipUrmator = rnd.nextInt(FORME.length);
+        inaltimePiesa = NIVELE - 1;
+
+        if (nivelBlocat(NIVELE - 1)) {
             terminat = true;
             if (scor > record) record = scor;
             if (sunet != null) sunet.final_();
         }
     }
 
-    public void jocNou() {
-        for (int r = 0; r < RANDURI; r++) {
-            for (int c = 0; c < COLOANE; c++) tabla[r][c] = 0;
-            tremurRand[r] = 0f;
-        }
-        scor = 0; linii = 0; nivel = 1;
-        pieseAsezate = 0;
-        tetrisuriFacute = 0;
-        vitezaCadere = vitezaInitiala;
-        terminat = false;
-        cutremurGlobal = 0f;
-        unghiTurn = 0f;
-        vitezaUnghi = 0f;
-        tipUrmator = rnd.nextInt(7);
-        pieseNoua();
-    }
+    /** verifica daca piesa se loveste de ceva la un anumit nivel */
+    private boolean nivelBlocat(int niv) {
+        if (niv < 0) return true;
+        if (niv >= NIVELE) return false;
 
-    public int[][] formaCurenta() {
-        return PIESE[tipCurent][rotatie];
-    }
-
-    /** verifica daca piesa incape la inaltimea py, cu rotatia rot */
-    private boolean ciocnire(int py, int rot) {
-        int[][] f = PIESE[tipCurent][rot];
-        for (int i = 0; i < 4; i++) {
-            int x = coloanaPiesei(f[i][0]);
-            int y = py + f[i][1] - 3;
-            if (y < 0) return true;
-            if (y < RANDURI && tabla[y][x] != 0) return true;
+        int[] poz = pozitiiPiesa();
+        for (int p : poz) {
+            if (p < 0) continue;
+            if (turn[niv][p] != 0) return true;
         }
         return false;
     }
 
-    // ---------- rotirea turnului cu degetul ----------
+    public void jocNou() {
+        for (int n = 0; n < NIVELE; n++) {
+            for (int p = 0; p < POZITII; p++) turn[n][p] = 0;
+            tremurNivel[n] = 0f;
+        }
+        scor = 0; inele = 0; nivel = 1;
+        pieseAsezate = 0;
+        vitezaCadere = vitezaInitiala;
+        terminat = false;
+        cutremurGlobal = 0f;
+        unghiBaza = 0f;
+        vitezaUnghi = 0f;
+        tipUrmator = rnd.nextInt(FORME.length);
+        pieseNoua();
+    }
+
+    // ---------- rotirea bazei cu degetul ----------
 
     public void degetJos() {
         degetPeEcran = true;
         vitezaUnghi = 0f;
     }
 
-    /** deltaGrade: cat s-a miscat degetul, transformat in grade */
     public void rotesteContinuu(float deltaGrade) {
         if (terminat) return;
-        unghiTurn += deltaGrade;
+        unghiBaza += deltaGrade;
         vitezaUnghi = deltaGrade;
     }
 
@@ -162,140 +153,118 @@ public class JocTurn {
         degetPeEcran = false;
     }
 
-    /** aduce turnul la cea mai apropiata fata, ca piesele sa stea aliniate */
-    private void alinieazaTurn(float dt) {
+    private void alinieazaBaza(float dt) {
         if (degetPeEcran) return;
 
-        // inertie scurta dupa ce ridici degetul
-        if (Math.abs(vitezaUnghi) > 0.05f) {
-            unghiTurn += vitezaUnghi;
-            vitezaUnghi *= 0.88f;
+        if (Math.abs(vitezaUnghi) > 0.06f) {
+            unghiBaza += vitezaUnghi;
+            vitezaUnghi *= 0.86f;
             return;
         }
         vitezaUnghi = 0f;
 
-        float tinta = Math.round(unghiTurn / PAS_GRADE) * PAS_GRADE;
-        float dif = tinta - unghiTurn;
-        unghiTurn += dif * Math.min(1f, dt * 12f);
-        if (Math.abs(dif) < 0.05f) unghiTurn = tinta;
-    }
-
-    public void roteste() {
-        if (terminat) return;
-        int nou = (rotatie + 1) % 4;
-        if (!ciocnire(pieseY, nou)) {
-            rotatie = nou;
-            if (sunet != null) sunet.rotire();
-        }
+        float tinta = Math.round(unghiBaza / PAS_GRADE) * PAS_GRADE;
+        float dif = tinta - unghiBaza;
+        unghiBaza += dif * Math.min(1f, dt * 14f);
+        if (Math.abs(dif) < 0.05f) unghiBaza = tinta;
     }
 
     public void coboaraRapid() {
         if (terminat) return;
-        if (!ciocnire(pieseY - 1, rotatie)) {
-            pieseY--;
-            ceas = 0f;
-            alunecare = 0f;
-            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.35f);
-        }
+        inaltimePiesa -= 1f;
+        if (inaltimePiesa < 0f) inaltimePiesa = 0f;
+        cutremurGlobal = Math.min(1f, cutremurGlobal + 0.3f);
     }
 
     public void trantesteJos() {
         if (terminat) return;
-        while (!ciocnire(pieseY - 1, rotatie)) pieseY--;
-        alunecare = 0f;
-        ceas = 0f;
+        int niv = (int) Math.floor(inaltimePiesa);
+        while (niv > 0 && !nivelBlocat(niv - 1)) niv--;
+        inaltimePiesa = niv;
         cutremurGlobal = 1f;
         if (sunet != null) sunet.trantire();
         aseaza(false);
     }
 
-    public int pozitieFantoma() {
-        int y = pieseY;
-        while (!ciocnire(y - 1, rotatie)) y--;
-        return y - 3;
-    }
-
-    public float pieseYVizual() {
-        return (pieseY - 3) + alunecare;
+    /** unde va ateriza piesa */
+    public int nivelAterizare() {
+        int niv = (int) Math.floor(inaltimePiesa);
+        while (niv > 0 && !nivelBlocat(niv - 1)) niv--;
+        return niv;
     }
 
     public float apropiere() {
-        int yAteriz = pozitieFantoma();
-        float dist = pieseYVizual() - yAteriz;
+        float dist = inaltimePiesa - nivelAterizare();
         if (dist < 0f) dist = 0f;
-        float p = 1f - (dist / 9f);
+        float p = 1f - (dist / 8f);
         if (p < 0f) p = 0f;
         if (p > 1f) p = 1f;
         return p;
     }
 
-    public boolean coloanaTinta(int c) {
-        int[][] f = formaCurenta();
-        for (int i = 0; i < 4; i++) {
-            if (coloanaPiesei(f[i][0]) == c) return true;
-        }
-        return false;
-    }
-
     private void aseaza(boolean cuSunet) {
-        int[][] f = formaCurenta();
-        for (int i = 0; i < 4; i++) {
-            int x = coloanaPiesei(f[i][0]);
-            int y = pieseY + f[i][1] - 3;
-            if (y >= 0 && y < RANDURI) {
-                tabla[y][x] = tipCurent + 1;
-                tremurRand[y] = 1f;
-                if (y > 0) tremurRand[y - 1] = 0.7f;
-            }
+        int niv = (int) Math.floor(inaltimePiesa);
+        if (niv < 0) niv = 0;
+        if (niv >= NIVELE) niv = NIVELE - 1;
+
+        int[] poz = pozitiiPiesa();
+        for (int p : poz) {
+            if (p < 0) continue;
+            turn[niv][p] = tipCurent + 1;
         }
-        cutremurGlobal = Math.max(cutremurGlobal, 0.55f);
+
+        tremurNivel[niv] = 1f;
+        if (niv > 0) tremurNivel[niv - 1] = 0.7f;
+        cutremurGlobal = Math.max(cutremurGlobal, 0.6f);
+
         pieseAsezate++;
         if (cuSunet && sunet != null) sunet.aterizare();
-        verificaLinii();
+
+        verificaInele();
         pieseNoua();
     }
 
-    private void verificaLinii() {
+    private void verificaInele() {
         int sterse = 0;
-        for (int r = 0; r < RANDURI; r++) {
+
+        for (int n = 0; n < NIVELE; n++) {
             boolean plin = true;
-            for (int c = 0; c < COLOANE; c++) {
-                if (tabla[r][c] == 0) { plin = false; break; }
+            for (int p = 0; p < POZITII; p++) {
+                if (turn[n][p] == 0) { plin = false; break; }
             }
+
             if (plin) {
-                if (particule != null) particule.explozie(r, COLOANE);
-                for (int rr = r; rr < RANDURI - 1; rr++) {
-                    System.arraycopy(tabla[rr + 1], 0, tabla[rr], 0, COLOANE);
+                if (particule != null) particule.explozie(n, POZITII);
+
+                for (int nn = n; nn < NIVELE - 1; nn++) {
+                    System.arraycopy(turn[nn + 1], 0, turn[nn], 0, POZITII);
                 }
-                for (int c = 0; c < COLOANE; c++) tabla[RANDURI - 1][c] = 0;
+                for (int p = 0; p < POZITII; p++) turn[NIVELE - 1][p] = 0;
+
                 sterse++;
-                r--;
+                n--;
             }
         }
 
         if (sterse > 0) {
             int nivelVechi = nivel;
-            linii += sterse;
+            inele += sterse;
 
             switch (sterse) {
-                case 1: scor += 250 * nivel; break;
-                case 2: scor += 700 * nivel; break;
-                case 3: scor += 1300 * nivel; break;
-                default:
-                    scor += 2200 * nivel;
-                    tetrisuriFacute++;
-                    break;
+                case 1: scor += 300 * nivel; break;
+                case 2: scor += 900 * nivel; break;
+                default: scor += 2000 * nivel; break;
             }
 
             if (sunet != null) {
-                if (sterse >= 4) sunet.tetris();
+                if (sterse >= 2) sunet.tetris();
                 else sunet.linie();
             }
 
             if (scor > record) record = scor;
-            nivel = 1 + linii / LINII_PE_NIVEL;
+            nivel = 1 + inele / 4;
             recalculeazaViteza();
-            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.5f * sterse);
+            cutremurGlobal = 1f;
 
             if (nivel > nivelVechi && sunet != null) sunet.nivel();
         }
@@ -303,49 +272,47 @@ public class JocTurn {
 
     private void recalculeazaViteza() {
         float v = vitezaInitiala;
-        for (int i = 1; i < nivel; i++) v *= 0.84f;
-        vitezaCadere = Math.max(0.09f, v);
+        for (int i = 1; i < nivel; i++) v *= 0.85f;
+        vitezaCadere = Math.max(0.12f, v);
     }
 
     public void actualizeaza(float dt) {
         stingeEfecte(dt);
-        alinieazaTurn(dt);
+        alinieazaBaza(dt);
 
         if (terminat) return;
 
-        ceas += dt;
+        // piesa coboara lin, continuu
+        inaltimePiesa -= dt / vitezaCadere;
 
-        if (!ciocnire(pieseY - 1, rotatie)) {
-            alunecare = -(ceas / vitezaCadere);
-            if (alunecare < -1f) alunecare = -1f;
-        } else {
-            alunecare = 0f;
-        }
-
-        if (ceas >= vitezaCadere) {
-            ceas = 0f;
-            alunecare = 0f;
-            if (!ciocnire(pieseY - 1, rotatie)) {
-                pieseY--;
-            } else {
-                aseaza(true);
-            }
+        int nivAteriz = nivelAterizare();
+        if (inaltimePiesa <= nivAteriz) {
+            inaltimePiesa = nivAteriz;
+            aseaza(true);
         }
     }
 
     public void stingeEfecte(float dt) {
-        for (int r = 0; r < RANDURI; r++) {
-            tremurRand[r] -= dt * 2.2f;
-            if (tremurRand[r] < 0f) tremurRand[r] = 0f;
+        for (int n = 0; n < NIVELE; n++) {
+            tremurNivel[n] -= dt * 2.2f;
+            if (tremurNivel[n] < 0f) tremurNivel[n] = 0f;
         }
         cutremurGlobal -= dt * 2.6f;
         if (cutremurGlobal < 0f) cutremurGlobal = 0f;
     }
 
-    /** cate coloane sunt ocupate pe un rand, pentru afisaj */
-    public int coloanePline(int rand) {
+    /** cate pozitii sunt ocupate pe un nivel, pentru afisaj */
+    public int pozitiiPline(int niv) {
         int n = 0;
-        for (int c = 0; c < COLOANE; c++) if (tabla[rand][c] != 0) n++;
+        for (int p = 0; p < POZITII; p++) if (turn[niv][p] != 0) n++;
         return n;
+    }
+
+    /** inaltimea maxima a turnului */
+    public int inaltimeTurn() {
+        for (int n = NIVELE - 1; n >= 0; n--) {
+            if (pozitiiPline(n) > 0) return n + 1;
+        }
+        return 0;
     }
 }
