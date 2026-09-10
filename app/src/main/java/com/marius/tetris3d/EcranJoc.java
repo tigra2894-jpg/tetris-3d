@@ -14,6 +14,7 @@ public class EcranJoc extends Ecran {
 
     public Joc joc;
     private Particule particule;
+    private Fundal fundal;
 
     private float rotatieLumina = 0f;
     private float leganare = 0f;
@@ -45,6 +46,7 @@ public class EcranJoc extends Ecran {
     public EcranJoc(Aplicatie app) {
         super(app);
         particule = new Particule();
+        fundal = new Fundal();
         joc = new Joc();
         joc.particule = particule;
         joc.sunet = app.sunet;
@@ -52,12 +54,13 @@ public class EcranJoc extends Ecran {
 
     public void pregateste(int modNou, boolean liber) {
         mod = modNou;
-        modLiber = liber;
+        modLiber = liber || (modNou == Setari.MOD_LIBER);
         joc.vitezaInitiala = app.setari.vitezaInitiala();
         joc.record = app.setari.record(mod);
         joc.culori = app.setari.culoriPiese();
-        joc.stilSticla = (mod == Setari.MOD_STICLA);
+        joc.stilSticla = false;
         joc.jocNou();
+        fundal.seteazaAccent(modLiber);
         stare = STARE_JOC;
         timpJucat = 0f;
         secundeRaportate = 0;
@@ -68,6 +71,7 @@ public class EcranJoc extends Ecran {
     public void laIntrare() {
         super.laIntrare();
         culori = app.setari.culoriPiese();
+        fundal.seteazaAccent(modLiber);
     }
 
     @Override
@@ -90,9 +94,10 @@ public class EcranJoc extends Ecran {
         super.actualizeaza(dt);
 
         rotatieLumina += dt * 6f;
-        leganare += dt * 0.28f;
+        leganare += dt * 0.26f;
 
         particule.actualizeaza(dt);
+        fundal.actualizeaza(dt);
 
         if (stare == STARE_JOC) {
             int liniiInainte = joc.linii;
@@ -132,26 +137,28 @@ public class EcranJoc extends Ecran {
         d.seteazaProiectie(46f, d.raport, 1f, 90f);
 
         float scut = joc.cutremurGlobal;
-        float zgX = (float) Math.sin(timp * 47f) * scut * 0.42f;
-        float zgY = (float) Math.cos(timp * 39f) * scut * 0.32f;
+        float zgX = (float) Math.sin(timp * 47f) * scut * 0.40f;
+        float zgY = (float) Math.cos(timp * 39f) * scut * 0.30f;
 
-        float camX = 3.4f + (float) Math.sin(leganare) * 1.3f + zgX;
-        float camY = -2.6f + (float) Math.cos(leganare * 0.7f) * 0.8f + zgY;
+        float camX = 2.6f + (float) Math.sin(leganare) * 1.1f + zgX;
+        float camY = -2.2f + (float) Math.cos(leganare * 0.7f) * 0.7f + zgY;
 
         d.seteazaCamera(camX, camY, 30f, 0f, 0.5f, 0f);
 
         d.seteazaLumina(
-                (float) Math.sin(Math.toRadians(rotatieLumina)) * 16f,
-                18f,
-                (float) Math.cos(Math.toRadians(rotatieLumina)) * 16f + 12f);
+                (float) Math.sin(Math.toRadians(rotatieLumina)) * 10f,
+                20f,
+                (float) Math.cos(Math.toRadians(rotatieLumina)) * 10f + 16f);
 
         offX = -Joc.COLOANE / 2f + 0.5f;
         offY = -Joc.RANDURI / 2f + 1.0f;
 
+        fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
+        fundal.deseneazaGrila(d, offY);
 
-        stalpi(d);
         podea(d);
+        reflexii(d);
         blocuri(d);
 
         if (stare == STARE_JOC) piesaCurenta(d);
@@ -167,32 +174,41 @@ public class EcranJoc extends Ecran {
         if (stare == STARE_FINAL) ecranFinal();
     }
 
-    private void stalpi(Desenator d) {
-        for (int r = 0; r < Joc.RANDURI; r++) {
-            d.cub(offX - 0.85f, offY + r, -1.2f,
-                    0.10f, 0.12f, 0.20f, 0.55f, 0.5f);
-            d.cub(offX + Joc.COLOANE - 0.15f, offY + r, -1.2f,
-                    0.10f, 0.12f, 0.20f, 0.55f, 0.5f);
-        }
-    }
-
     private void podea(Desenator d) {
         boolean activ = (stare == STARE_JOC);
         float ap = activ ? joc.apropiere() : 0f;
+        float[] acc = fundal.accent();
 
         for (int c = 0; c < Joc.COLOANE; c++) {
             boolean tinta = activ && joc.coloanaTinta(c);
 
-            float r = 0.20f, g = 0.24f, b = 0.40f, a = 0.85f;
+            float r = acc[0] * 0.28f;
+            float g = acc[1] * 0.30f;
+            float b = acc[2] * 0.42f;
+            float a = 0.70f;
 
             if (tinta) {
                 float caldura = ap * ap;
-                r = 0.20f + caldura * 0.80f;
-                g = 0.24f + caldura * 0.28f;
-                b = 0.40f - caldura * 0.34f;
-                a = 0.85f + caldura * 0.15f;
+                r = r + caldura * (1.00f - r);
+                g = g + caldura * (0.35f - g);
+                b = b + caldura * (0.20f - b);
+                a = 0.70f + caldura * 0.30f;
             }
-            d.cub(offX + c, offY - 1f, -0.4f, r, g, b, a, 0.92f);
+            d.cub(offX + c, offY - 1f, -0.35f, r, g, b, a, 0.90f);
+        }
+    }
+
+    /** reflexia blocurilor pe podea */
+    private void reflexii(Desenator d) {
+        for (int r = 0; r < 8 && r < Joc.RANDURI; r++) {
+            for (int c = 0; c < Joc.COLOANE; c++) {
+                int val = joc.tabla[r][c];
+                if (val == 0) continue;
+
+                float[] cul = culori[val - 1];
+                fundal.reflexieBloc(d, offX + c, offY, r, 0f,
+                        cul[0], cul[1], cul[2], 1f);
+            }
         }
     }
 
@@ -200,7 +216,6 @@ public class EcranJoc extends Ecran {
         boolean activ = (stare == STARE_JOC);
         float ap = activ ? joc.apropiere() : 0f;
         int yFantoma = activ ? joc.pozitieFantoma() : -1;
-        float alfaBaza = joc.stilSticla ? 0.62f : 1f;
 
         for (int r = 0; r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
@@ -209,42 +224,20 @@ public class EcranJoc extends Ecran {
 
                 float[] cul = culori[val - 1];
 
-                float trem = joc.tremurRand[r] + joc.cutremurGlobal * 0.6f;
+                float trem = joc.tremurRand[r] + joc.cutremurGlobal * 0.55f;
                 boolean simte = activ && joc.coloanaTinta(c) && r <= yFantoma + 1;
-                if (simte) trem += ap * 0.55f;
+                if (simte) trem += ap * 0.5f;
 
-                float dx = (float) Math.sin(timp * 41f + r * 2.1f + c) * trem * 0.10f;
-                float dy = (float) Math.cos(timp * 53f + c * 1.7f) * trem * 0.07f;
+                float dx = (float) Math.sin(timp * 41f + r * 2.1f + c) * trem * 0.09f;
+                float dy = (float) Math.cos(timp * 53f + c * 1.7f) * trem * 0.06f;
 
-                float lum = 1f + (simte ? ap * 0.45f : 0f) + trem * 0.20f;
+                float lum = 1f + (simte ? ap * 0.35f : 0f) + trem * 0.18f;
 
-                float rr = Math.min(1f, cul[0] * lum);
-                float gg = Math.min(1f, cul[1] * lum);
-                float bb = Math.min(1f, cul[2] * lum);
-                float alfa = alfaBaza;
-                float scara = 1f;
-
-                // in modul sticla, crapaturile decoloreaza si micsoreaza blocul
-                if (joc.stilSticla) {
-                    int cr = joc.crapaturi[r][c];
-                    if (cr > 0) {
-                        float uzura = Math.min(1f, cr / 3f);
-                        // culoarea se spala spre alb-cenusiu
-                        rr = rr + (0.85f - rr) * uzura * 0.7f;
-                        gg = gg + (0.85f - gg) * uzura * 0.7f;
-                        bb = bb + (0.90f - bb) * uzura * 0.7f;
-                        alfa = alfaBaza + uzura * 0.25f;
-                        scara = 1f - uzura * 0.10f;
-
-                        // blocul aproape spart tremura singur
-                        if (cr >= 2) {
-                            dx += (float) Math.sin(timp * 33f + c * 3.1f) * 0.05f;
-                            dy += (float) Math.cos(timp * 29f + r * 2.7f) * 0.04f;
-                        }
-                    }
-                }
-
-                d.cub(offX + c + dx, offY + r + dy, 0f, rr, gg, bb, alfa, scara);
+                d.cub(offX + c + dx, offY + r + dy, 0f,
+                        Math.min(1f, cul[0] * lum),
+                        Math.min(1f, cul[1] * lum),
+                        Math.min(1f, cul[2] * lum),
+                        1f, 1f);
             }
         }
     }
@@ -252,12 +245,30 @@ public class EcranJoc extends Ecran {
     private void piesaCurenta(Desenator d) {
         int[][] forma = joc.formaCurenta();
         float[] cul = culori[joc.tipCurent];
-        float alfaBloc = joc.stilSticla ? 0.75f : 1f;
+        float yPiesa = joc.pieseYVizual();
 
+        // halou slab in jurul piesei, ca sa para ca lumineaza
+        for (int i = 0; i < 4; i++) {
+            fundal.halou(d,
+                    offX + joc.pieseX + forma[i][0],
+                    offY + yPiesa + forma[i][1],
+                    0f, cul[0], cul[1], cul[2], 0.85f);
+        }
+
+        // fantoma unde va cadea
+        int yF = joc.pozitieFantoma();
+        float pf = 0.16f + 0.12f * puls(2.6f);
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
-                  offY + joc.pieseYVizual() + forma[i][1],
-                  0f, cul[0], cul[1], cul[2], alfaBloc, 1f);
+                  offY + yF + forma[i][1],
+                  0f, cul[0], cul[1], cul[2], pf, 0.92f);
+        }
+
+        // piesa in sine
+        for (int i = 0; i < 4; i++) {
+            d.cub(offX + joc.pieseX + forma[i][0],
+                  offY + yPiesa + forma[i][1],
+                  0f, cul[0], cul[1], cul[2], 1f, 1f);
         }
     }
 
@@ -266,7 +277,7 @@ public class EcranJoc extends Ecran {
         float[] cul = culori[joc.tipUrmator];
 
         float bazaX = offX + Joc.COLOANE / 2f - 1.1f;
-        float bazaY = offY - 3.2f;
+        float bazaY = offY - 3.4f;
         float scara = 0.40f;
 
         for (int i = 0; i < 4; i++) {
@@ -293,18 +304,14 @@ public class EcranJoc extends Ecran {
             app.ui.textCentrat("| |", 0.5f, 0.05f, 0.026f, Color.rgb(190, 200, 230));
 
             if (modLiber) {
-                app.ui.textCentrat("LIBER", 0.5f, 0.088f, 0.016f, Color.rgb(190, 160, 255));
-            }
-            if (joc.stilSticla && joc.blocuriSparte > 0) {
-                app.ui.textCentrat("SPARTE " + joc.blocuriSparte, 0.5f,
-                        modLiber ? 0.118f : 0.088f, 0.015f, Color.rgb(150, 220, 240));
+                app.ui.textCentrat("LIBER", 0.5f, 0.088f, 0.016f, Color.rgb(210, 150, 255));
             }
         }
     }
 
     private void ecranPauza() {
         app.ui.panou(0.5f - 0.30f, Y_P_TITLU - 0.05f, 0.60f, 0.50f,
-                Color.argb(150, 10, 12, 22), 0.03f);
+                Color.argb(150, 8, 10, 20), 0.03f);
 
         app.ui.textCentrat("PAUZA", 0.5f, Y_P_TITLU, 0.060f, Color.rgb(255, 225, 110));
 
@@ -317,7 +324,7 @@ public class EcranJoc extends Ecran {
         float clip = 0.75f + 0.25f * puls(3f);
 
         app.ui.panou(0.5f - 0.34f, Y_F_TITLU - 0.06f, 0.68f, 0.68f,
-                Color.argb(160, 10, 12, 22), 0.03f);
+                Color.argb(160, 8, 10, 20), 0.03f);
 
         app.ui.textCentrat("FINAL", 0.5f, Y_F_TITLU, 0.060f,
                 Color.rgb((int) (255 * clip), 90, 90));
@@ -444,4 +451,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-    }
+}
