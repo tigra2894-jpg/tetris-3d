@@ -13,8 +13,8 @@ public class EcranStatistici extends Ecran {
     private static final float X_ST = 0.28f;
     private static final float X_DR = 0.72f;
 
-    private static final float Y_REC_TITLU = 0.57f;
-    private static final float Y_REC_PRIM  = 0.635f;
+    private static final float Y_REC_TITLU = 0.58f;
+    private static final float Y_REC_PRIM  = 0.65f;
 
     private static final float Y_STERGE = 0.85f;
     private static final float Y_INAPOI = 0.94f;
@@ -23,8 +23,11 @@ public class EcranStatistici extends Ecran {
     private boolean seTine = false;
     private float clipireStergere = 0f;
 
+    private Fundal fundal;
+
     public EcranStatistici(Aplicatie app) {
         super(app);
+        fundal = new Fundal();
     }
 
     @Override
@@ -33,11 +36,13 @@ public class EcranStatistici extends Ecran {
         tinutSterge = 0f;
         seTine = false;
         clipireStergere = 0f;
+        fundal.seteazaAccent(false);
     }
 
     @Override
     public void actualizeaza(float dt) {
         super.actualizeaza(dt);
+        fundal.actualizeaza(dt);
 
         if (seTine) {
             tinutSterge += dt;
@@ -62,9 +67,9 @@ public class EcranStatistici extends Ecran {
         d.seteazaProiectie(48f, d.raport, 1f, 90f);
         d.seteazaCamera(0f, 0f, 26f, 0f, 0f, 0f);
         d.seteazaLumina(
-                (float) Math.sin(timp * 0.45f) * 15f, 14f,
-                (float) Math.cos(timp * 0.45f) * 15f + 12f);
+                (float) Math.sin(timp * 0.45f) * 10f, 18f, 18f);
 
+        fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
 
         app.ui.textCentrat("STATISTICI", 0.5f, Y_TITLU, 0.062f,
@@ -90,16 +95,12 @@ public class EcranStatistici extends Ecran {
         app.ui.textCentrat("RECORDURI", 0.5f, Y_REC_TITLU, 0.026f,
                 Color.rgb(150, 160, 190));
 
-        int linie = 0;
         for (int m = 0; m < Setari.NR_MODURI; m++) {
-            if (!Setari.MOD_DISPONIBIL[m]) continue;
-
-            float y = Y_REC_PRIM + linie * 0.075f;
-            app.ui.text(Setari.NUME_MODURI[m], 0.16f, y, 0.024f,
+            float y = Y_REC_PRIM + m * 0.075f;
+            app.ui.text(Setari.NUME_MODURI[m], 0.16f, y, 0.026f,
                     Color.rgb(160, 170, 200));
-            app.ui.textDreapta(String.valueOf(s.record(m)), 0.84f, y, 0.032f,
+            app.ui.textDreapta(String.valueOf(s.record(m)), 0.84f, y, 0.034f,
                     Color.rgb(255, 220, 130));
-            linie++;
         }
 
         float progres = Math.min(1f, tinutSterge / 1.4f);
