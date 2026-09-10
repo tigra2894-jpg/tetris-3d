@@ -23,6 +23,7 @@ public class Aplicatie {
     public EcranSetari      ecranSetari;
     public EcranStatistici  ecranStatistici;
     public EcranJoc         ecranJoc;
+    public EcranTurn        ecranTurn;
 
     public float latimePx = 1f;
     public float inaltimePx = 1f;
@@ -48,6 +49,7 @@ public class Aplicatie {
         ecranSetari     = new EcranSetari(this);
         ecranStatistici = new EcranStatistici(this);
         ecranJoc        = new EcranJoc(this);
+        ecranTurn       = new EcranTurn(this);
 
         ecranCurent = ecranMeniu;
         ecranCurent.laIntrare();
@@ -96,8 +98,14 @@ public class Aplicatie {
     /** porneste un joc nou; liber=true activeaza schimbarea piesei la apasare */
     public void jocNou(int mod, boolean liber) {
         setari.setUltimulMod(mod);
-        ecranJoc.pregateste(mod, liber);
-        mergiLa(ecranJoc);
+
+        if (mod == Setari.MOD_TURN) {
+            ecranTurn.pregateste(liber);
+            mergiLa(ecranTurn);
+        } else {
+            ecranJoc.pregateste(mod, liber);
+            mergiLa(ecranJoc);
+        }
     }
 
     public void iesire() {
@@ -155,5 +163,6 @@ public class Aplicatie {
 
     public void laPauza() {
         if (ecranJoc != null) ecranJoc.laPauzaAplicatie();
+        if (ecranTurn != null) ecranTurn.laPauzaAplicatie();
     }
 }
