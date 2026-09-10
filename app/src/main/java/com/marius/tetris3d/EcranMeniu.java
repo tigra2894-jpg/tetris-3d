@@ -4,20 +4,20 @@ import android.graphics.Color;
 
 public class EcranMeniu extends Ecran {
 
-    private static final float Y_TITLU  = 0.16f;
-    private static final float Y_SUBT   = 0.235f;
+    private static final float Y_TITLU  = 0.17f;
+    private static final float Y_SUBT   = 0.245f;
 
-    private static final float Y_JOACA  = 0.47f;
-    private static final float Y_MODURI = 0.57f;
-    private static final float Y_SETARI = 0.66f;
-    private static final float Y_STAT   = 0.75f;
-    private static final float Y_IESIRE = 0.84f;
+    private static final float Y_JOACA  = 0.50f;
+    private static final float Y_MODURI = 0.60f;
+    private static final float Y_SETARI = 0.69f;
+    private static final float Y_STAT   = 0.78f;
+    private static final float Y_IESIRE = 0.87f;
     private static final float GROSIME  = 0.055f;
 
     private int apasat = -1;
     private float stralucire = 0f;
 
-    private static final int NR_PIESE = 5;
+    private static final int NR_PIESE = 6;
     private final float[] px = new float[NR_PIESE];
     private final float[] py = new float[NR_PIESE];
     private final float[] pz = new float[NR_PIESE];
@@ -26,17 +26,20 @@ public class EcranMeniu extends Ecran {
     private final float[] vitY = new float[NR_PIESE];
     private final int[] tip = new int[NR_PIESE];
 
+    private Fundal fundal;
+
     public EcranMeniu(Aplicatie app) {
         super(app);
+        fundal = new Fundal();
 
         java.util.Random rnd = new java.util.Random(11);
         for (int i = 0; i < NR_PIESE; i++) {
-            px[i] = (rnd.nextFloat() - 0.5f) * 14f;
+            px[i] = (rnd.nextFloat() - 0.5f) * 16f;
             py[i] = (rnd.nextFloat() - 0.5f) * 26f;
-            pz[i] = -10f - rnd.nextFloat() * 12f;
+            pz[i] = -8f - rnd.nextFloat() * 10f;
             rot[i] = rnd.nextFloat() * 360f;
-            vitRot[i] = 8f + rnd.nextFloat() * 16f;
-            vitY[i] = 0.5f + rnd.nextFloat() * 1.1f;
+            vitRot[i] = 10f + rnd.nextFloat() * 18f;
+            vitY[i] = 0.4f + rnd.nextFloat() * 0.9f;
             tip[i] = rnd.nextInt(7);
         }
     }
@@ -46,11 +49,13 @@ public class EcranMeniu extends Ecran {
         super.laIntrare();
         apasat = -1;
         stralucire = 0f;
+        fundal.seteazaAccent(false);
     }
 
     @Override
     public void actualizeaza(float dt) {
         super.actualizeaza(dt);
+        fundal.actualizeaza(dt);
 
         for (int i = 0; i < NR_PIESE; i++) {
             rot[i] += dt * vitRot[i];
@@ -72,35 +77,35 @@ public class EcranMeniu extends Ecran {
     public void deseneaza(Desenator d) {
         d.seteazaProiectie(48f, d.raport, 1f, 90f);
 
-        float leg = timp * 0.22f;
+        float leg = timp * 0.20f;
         d.seteazaCamera(
-                (float) Math.sin(leg) * 1.0f,
-                (float) Math.cos(leg * 0.8f) * 0.6f,
+                (float) Math.sin(leg) * 0.9f,
+                (float) Math.cos(leg * 0.8f) * 0.5f,
                 26f,
                 0f, 0f, 0f);
 
         d.seteazaLumina(
-                (float) Math.sin(timp * 0.5f) * 16f,
-                14f,
-                (float) Math.cos(timp * 0.5f) * 16f + 12f);
+                (float) Math.sin(timp * 0.5f) * 10f,
+                18f, 18f);
 
+        fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
         deseneazaPieseFundal(d);
 
         float apTitlu = intrare(0f, 0.5f);
-        float pulsTitlu = 0.88f + 0.12f * puls(1.6f);
+        float pulsTitlu = 0.90f + 0.10f * puls(1.5f);
 
-        app.ui.textCentrat("TETRIS", 0.5f, Y_TITLU, 0.105f,
-                culoare((int) (255 * pulsTitlu), (int) (225 * pulsTitlu), 90, apTitlu));
+        app.ui.textCentrat("TETRIS", 0.5f, Y_TITLU, 0.110f,
+                culoare((int) (255 * pulsTitlu), (int) (215 * pulsTitlu), 60, apTitlu));
 
-        app.ui.textCentrat("3D", 0.5f, Y_SUBT, 0.070f,
-                culoare(80, (int) (215 * pulsTitlu), 255, apTitlu));
+        app.ui.textCentrat("3D", 0.5f, Y_SUBT, 0.072f,
+                culoare(60, (int) (225 * pulsTitlu), 255, apTitlu));
 
-        optiune("JOACA",      0, Y_JOACA,  0.052f, 100, 255, 140);
-        optiune("MODURI",     1, Y_MODURI, 0.044f, 140, 205, 255);
-        optiune("SETARI",     2, Y_SETARI, 0.044f, 215, 190, 255);
-        optiune("STATISTICI", 3, Y_STAT,   0.036f, 180, 190, 230);
-        optiune("IESIRE",     4, Y_IESIRE, 0.036f, 255, 115, 115);
+        optiune("JOACA",      0, Y_JOACA,  0.056f, 110, 255, 150);
+        optiune("MODURI",     1, Y_MODURI, 0.046f, 140, 205, 255);
+        optiune("SETARI",     2, Y_SETARI, 0.046f, 220, 180, 255);
+        optiune("STATISTICI", 3, Y_STAT,   0.038f, 180, 190, 230);
+        optiune("IESIRE",     4, Y_IESIRE, 0.038f, 255, 120, 120);
     }
 
     private float intrare(float intarziere, float durata) {
@@ -139,13 +144,13 @@ public class EcranMeniu extends Ecran {
             float[] cul = culori[tip[i]];
 
             for (int k = 0; k < 4; k++) {
-                float cx = px[i] + (forma[k][0] - 1.5f) * 0.75f;
-                float cy = py[i] + (forma[k][1] - 2.0f) * 0.75f;
+                float cx = px[i] + (forma[k][0] - 1.5f) * 0.80f;
+                float cy = py[i] + (forma[k][1] - 2.0f) * 0.80f;
 
                 d.cubRotit(cx, cy, pz[i],
                         rot[i], 0.5f, 1f, 0.3f,
-                        cul[0] * 0.55f, cul[1] * 0.55f, cul[2] * 0.55f,
-                        0.30f, 0.65f);
+                        cul[0] * 0.75f, cul[1] * 0.75f, cul[2] * 0.75f,
+                        0.35f, 0.70f);
             }
         }
     }
@@ -155,7 +160,8 @@ public class EcranMeniu extends Ecran {
 
         if (inRand(y, Y_JOACA, GROSIME)) {
             apasa(0);
-            app.jocNou(app.setari.ultimulMod(), false);
+            int m = app.setari.ultimulMod();
+            app.jocNou(m, m == Setari.MOD_LIBER);
             return true;
         }
         if (inRand(y, Y_MODURI, GROSIME)) {
