@@ -155,7 +155,7 @@ public class EcranJoc extends Ecran {
 
         fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
-        fundal.deseneazaGrila(d, offY);
+        fundal.deseneazaGrila(d, offY, Joc.COLOANE);
 
         podea(d);
         reflexii(d);
@@ -182,25 +182,24 @@ public class EcranJoc extends Ecran {
         for (int c = 0; c < Joc.COLOANE; c++) {
             boolean tinta = activ && joc.coloanaTinta(c);
 
-            float r = acc[0] * 0.28f;
-            float g = acc[1] * 0.30f;
-            float b = acc[2] * 0.42f;
-            float a = 0.70f;
+            float r = acc[0] * 0.30f;
+            float g = acc[1] * 0.32f;
+            float b = acc[2] * 0.45f;
+            float a = 0.75f;
 
             if (tinta) {
                 float caldura = ap * ap;
                 r = r + caldura * (1.00f - r);
-                g = g + caldura * (0.35f - g);
+                g = g + caldura * (0.40f - g);
                 b = b + caldura * (0.20f - b);
-                a = 0.70f + caldura * 0.30f;
+                a = 0.75f + caldura * 0.25f;
             }
             d.cub(offX + c, offY - 1f, -0.35f, r, g, b, a, 0.90f);
         }
     }
 
-    /** reflexia blocurilor pe podea */
     private void reflexii(Desenator d) {
-        for (int r = 0; r < 8 && r < Joc.RANDURI; r++) {
+        for (int r = 0; r < 6 && r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
                 int val = joc.tabla[r][c];
                 if (val == 0) continue;
@@ -247,24 +246,16 @@ public class EcranJoc extends Ecran {
         float[] cul = culori[joc.tipCurent];
         float yPiesa = joc.pieseYVizual();
 
-        // halou slab in jurul piesei, ca sa para ca lumineaza
-        for (int i = 0; i < 4; i++) {
-            fundal.halou(d,
-                    offX + joc.pieseX + forma[i][0],
-                    offY + yPiesa + forma[i][1],
-                    0f, cul[0], cul[1], cul[2], 0.85f);
-        }
-
-        // fantoma unde va cadea
+        // fantoma unde va cadea, desenata prima, impinsa in spate
         int yF = joc.pozitieFantoma();
-        float pf = 0.16f + 0.12f * puls(2.6f);
+        float pf = 0.14f + 0.10f * puls(2.6f);
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
                   offY + yF + forma[i][1],
-                  0f, cul[0], cul[1], cul[2], pf, 0.92f);
+                  -0.15f, cul[0], cul[1], cul[2], pf, 0.88f);
         }
 
-        // piesa in sine
+        // piesa in sine, curata si luminoasa, ca blocurile asezate
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
                   offY + yPiesa + forma[i][1],
@@ -451,4 +442,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-}
+                                            }
