@@ -16,7 +16,6 @@ public class EcranJoc extends Ecran {
     private Particule particule;
     private Fundal fundal;
 
-    private float rotatieLumina = 0f;
     private float leganare = 0f;
     private float timpJucat = 0f;
     private int secundeRaportate = 0;
@@ -93,7 +92,6 @@ public class EcranJoc extends Ecran {
     public void actualizeaza(float dt) {
         super.actualizeaza(dt);
 
-        rotatieLumina += dt * 6f;
         leganare += dt * 0.26f;
 
         particule.actualizeaza(dt);
@@ -145,11 +143,6 @@ public class EcranJoc extends Ecran {
 
         d.seteazaCamera(camX, camY, 30f, 0f, 0.5f, 0f);
 
-        d.seteazaLumina(
-                (float) Math.sin(Math.toRadians(rotatieLumina)) * 10f,
-                20f,
-                (float) Math.cos(Math.toRadians(rotatieLumina)) * 10f + 16f);
-
         offX = -Joc.COLOANE / 2f + 0.5f;
         offY = -Joc.RANDURI / 2f + 1.0f;
 
@@ -158,7 +151,10 @@ public class EcranJoc extends Ecran {
         fundal.deseneazaGrila(d, offY, Joc.COLOANE);
 
         podea(d);
+        fundal.deseneazaContur(d, offX, offY, Joc.COLOANE, Joc.RANDURI);
         reflexii(d);
+
+        umbrePiesa(d);
         blocuri(d);
 
         if (stare == STARE_JOC) piesaCurenta(d);
@@ -182,17 +178,17 @@ public class EcranJoc extends Ecran {
         for (int c = 0; c < Joc.COLOANE; c++) {
             boolean tinta = activ && joc.coloanaTinta(c);
 
-            float r = acc[0] * 0.30f;
-            float g = acc[1] * 0.32f;
-            float b = acc[2] * 0.45f;
-            float a = 0.75f;
+            float r = acc[0] * 0.26f;
+            float g = acc[1] * 0.28f;
+            float b = acc[2] * 0.40f;
+            float a = 0.78f;
 
             if (tinta) {
                 float caldura = ap * ap;
                 r = r + caldura * (1.00f - r);
-                g = g + caldura * (0.40f - g);
-                b = b + caldura * (0.20f - b);
-                a = 0.75f + caldura * 0.25f;
+                g = g + caldura * (0.42f - g);
+                b = b + caldura * (0.18f - b);
+                a = 0.78f + caldura * 0.22f;
             }
             d.cub(offX + c, offY - 1f, -0.35f, r, g, b, a, 0.90f);
         }
@@ -208,6 +204,44 @@ public class EcranJoc extends Ecran {
                 fundal.reflexieBloc(d, offX + c, offY, r, 0f,
                         cul[0], cul[1], cul[2], 1f);
             }
+        }
+    }
+
+    /** umbra piesei care cade, proiectata pe blocuri si pe podea */
+    private void umbrePiesa(Desenator d) {
+        if (stare != STARE_JOC) return;
+
+        int[][] forma = joc.formaCurenta();
+        float yPiesa = joc.pieseYVizual();
+        int yAteriz = joc.pozitieFantoma();
+
+        for (int i = 0; i < 4; i++) {
+            int c = joc.pieseX + forma[i][0];
+            if (c < 0 || c >= Joc.COLOANE) continue;
+
+            // gaseste prima suprafata de sub patratel
+            int yBaza = (int) Math.floor(yPiesa) + forma[i][1];
+            int ySupr = -1;
+
+            for (int r = Math.min(yBaza - 1, Joc.RANDURI - 1); r >= 0; r--) {
+                if (joc.tabla[r][c] != 0) { ySupr = r; break; }
+            }
+
+            float yUmbra;
+            if (ySupr >= 0) {
+                yUmbra = offY + ySupr + 0.55f;
+            } else {
+                yUmbra = offY - 0.45f;
+            }
+
+            float dist = (offY + yBaza) - yUmbra;
+            if (dist < 0f) continue;
+
+            // umbra e mai clara cand piesa e aproape
+            float putere = 1f - Math.min(1f, dist / 9f);
+            putere *= putere;
+
+            fundal.umbra(d, offX + c, yUmbra, 0f, putere * 0.85f);
         }
     }
 
@@ -230,7 +264,7 @@ public class EcranJoc extends Ecran {
                 float dx = (float) Math.sin(timp * 41f + r * 2.1f + c) * trem * 0.09f;
                 float dy = (float) Math.cos(timp * 53f + c * 1.7f) * trem * 0.06f;
 
-                float lum = 1f + (simte ? ap * 0.35f : 0f) + trem * 0.18f;
+                float lum = 1f + (simte ? ap * 0.30f : 0f) + trem * 0.16f;
 
                 d.cub(offX + c + dx, offY + r + dy, 0f,
                         Math.min(1f, cul[0] * lum),
@@ -246,16 +280,16 @@ public class EcranJoc extends Ecran {
         float[] cul = culori[joc.tipCurent];
         float yPiesa = joc.pieseYVizual();
 
-        // fantoma unde va cadea, desenata prima, impinsa in spate
+        // fantoma unde va cadea
         int yF = joc.pozitieFantoma();
-        float pf = 0.14f + 0.10f * puls(2.6f);
+        float pf = 0.13f + 0.09f * puls(2.6f);
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
                   offY + yF + forma[i][1],
                   -0.15f, cul[0], cul[1], cul[2], pf, 0.88f);
         }
 
-        // piesa in sine, curata si luminoasa, ca blocurile asezate
+        // piesa
         for (int i = 0; i < 4; i++) {
             d.cub(offX + joc.pieseX + forma[i][0],
                   offY + yPiesa + forma[i][1],
@@ -268,7 +302,7 @@ public class EcranJoc extends Ecran {
         float[] cul = culori[joc.tipUrmator];
 
         float bazaX = offX + Joc.COLOANE / 2f - 1.1f;
-        float bazaY = offY - 3.4f;
+        float bazaY = offY - 3.6f;
         float scara = 0.40f;
 
         for (int i = 0; i < 4; i++) {
@@ -442,4 +476,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-                                            }
+    }
