@@ -8,8 +8,6 @@ public class Joc {
     public static final int RANDURI = 20;
 
     public int[][] tabla = new int[RANDURI][COLOANE];
-
-    /** cate crapaturi are fiecare bloc; la 3 se sparge singur (doar modul sticla) */
     public int[][] crapaturi = new int[RANDURI][COLOANE];
 
     private static final int[][][][] PIESE = {
@@ -69,6 +67,14 @@ public class Joc {
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
 
+    /** animatia de rotire: merge de la 1 la 0 dupa fiecare rotire */
+    public float animRotire = 0f;
+    public int directieRotire = 1;
+
+    /** randul care tocmai s-a completat, pentru valul de lumina */
+    public int randValLumina = -1;
+    public float valLumina = 0f;
+
     public Joc() {
         tipUrmator = rnd.nextInt(7);
         pieseNoua();
@@ -82,6 +88,7 @@ public class Joc {
         pieseY = RANDURI - 1;
         alunecare = 0f;
         ceas = 0f;
+        animRotire = 0f;
         if (ciocnire(pieseX, pieseY, rotatie)) {
             terminat = true;
             if (scor > record) record = scor;
@@ -105,6 +112,9 @@ public class Joc {
         vitezaCadere = vitezaInitiala;
         terminat = false;
         cutremurGlobal = 0f;
+        animRotire = 0f;
+        valLumina = 0f;
+        randValLumina = -1;
         tipUrmator = rnd.nextInt(7);
         pieseNoua();
     }
@@ -143,10 +153,14 @@ public class Joc {
         else if (!ciocnire(pieseX + 1, pieseY, nou)) { pieseX++; rotatie = nou; reusit = true; }
         else if (!ciocnire(pieseX - 2, pieseY, nou)) { pieseX -= 2; rotatie = nou; reusit = true; }
 
-        if (reusit && sunet != null) sunet.rotire();
+        if (reusit) {
+            animRotire = 1f;
+            directieRotire = 1;
+            if (sunet != null) sunet.rotire();
+        }
     }
 
-    /** cicleaza prin cele 7 piese; la piesa I trece si prin varianta verticala */
+    /** MOD LIBER: cicleaza prin cele 7 piese, plus varianta verticala a barei */
     public void schimbaForma() {
         if (terminat) return;
 
@@ -155,9 +169,7 @@ public class Joc {
         int vechiX = pieseX;
         int vechiY = pieseY;
 
-        int nouTip;
-        int nouRot;
-
+        int nouTip, nouRot;
         if (tipCurent == 0 && rotatie == 0) {
             nouTip = 0;
             nouRot = 1;
@@ -170,6 +182,8 @@ public class Joc {
         rotatie = nouRot;
 
         if (gasesteLocValid()) {
+            animRotire = 1f;
+            directieRotire = -1;
             if (sunet != null) sunet.rotire();
         } else {
             tipCurent = vechiTip;
@@ -265,7 +279,6 @@ public class Joc {
         return false;
     }
 
-    /** cuSunet = aterizare normala; impactTare = trantit, crapa mai mult */
     private void aseaza(boolean cuSunet, boolean impactTare) {
         int[][] f = formaCurenta();
 
@@ -284,65 +297,8 @@ public class Joc {
         pieseAsezate++;
         if (cuSunet && sunet != null) sunet.aterizare();
 
-        if (stilSticla) {
-            aplicaCrapaturi(impactTare);
-        }
-
         verificaLinii();
         pieseNoua();
-    }
-
-    /** in modul sticla, impactul crapa blocurile de sub piesa asezata */
-    private void aplicaCrapaturi(boolean impactTare) {
-        int[][] f = formaCurenta();
-        int adancime = impactTare ? 3 : 2;
-        int putere = impactTare ? 2 : 1;
-
-        for (int i = 0; i < 4; i++) {
-            int x = pieseX + f[i][0];
-            int yBaza = pieseY + f[i][1] - 3;
-
-            for (int dy = 1; dy <= adancime; dy++) {
-                int y = yBaza - dy;
-                if (y < 0 || y >= RANDURI) continue;
-                if (x < 0 || x >= COLOANE) continue;
-                if (tabla[y][x] == 0) continue;
-
-                int adaugat = Math.max(1, putere - (dy - 1));
-                crapaturi[y][x] += adaugat;
-            }
-        }
-
-        spargeBlocurileCrapate();
-    }
-
-    /** blocurile care au ajuns la 3 crapaturi se sparg si dispar */
-    private void spargeBlocurileCrapate() {
-        int sparte = 0;
-
-        for (int r = 0; r < RANDURI; r++) {
-            for (int c = 0; c < COLOANE; c++) {
-                if (tabla[r][c] != 0 && crapaturi[r][c] >= CRAPATURI_MAX) {
-                    if (particule != null && culori != null) {
-                        int[] unRand = new int[COLOANE];
-                        unRand[c] = tabla[r][c];
-                        particule.explozieColorata(r, COLOANE, unRand, culori);
-                    }
-                    tabla[r][c] = 0;
-                    crapaturi[r][c] = 0;
-                    tremurRand[r] = 1f;
-                    sparte++;
-                }
-            }
-        }
-
-        if (sparte > 0) {
-            blocuriSparte += sparte;
-            scor += 25 * sparte * nivel;
-            if (scor > record) record = scor;
-            cutremurGlobal = Math.min(1f, cutremurGlobal + 0.3f);
-            if (sunet != null) sunet.linie();
-        }
     }
 
     private void verificaLinii() {
@@ -353,6 +309,10 @@ public class Joc {
                 if (tabla[r][c] == 0) { plin = false; break; }
             }
             if (plin) {
+                // valul de lumina porneste de la randul sters
+                randValLumina = r;
+                valLumina = 1f;
+
                 if (particule != null) {
                     if (stilSticla && culori != null) {
                         particule.explozieColorata(r, COLOANE, tabla[r], culori);
@@ -442,5 +402,14 @@ public class Joc {
         }
         cutremurGlobal -= dt * 2.6f;
         if (cutremurGlobal < 0f) cutremurGlobal = 0f;
+
+        animRotire -= dt * 5.5f;
+        if (animRotire < 0f) animRotire = 0f;
+
+        valLumina -= dt * 2.0f;
+        if (valLumina < 0f) {
+            valLumina = 0f;
+            randValLumina = -1;
+        }
     }
-}
+    }
