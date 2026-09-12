@@ -22,6 +22,7 @@ public class Aplicatie {
     public EcranModuri      ecranModuri;
     public EcranSetari      ecranSetari;
     public EcranStatistici  ecranStatistici;
+    public EcranDespre      ecranDespre;
     public EcranJoc         ecranJoc;
 
     public float latimePx = 1f;
@@ -47,6 +48,7 @@ public class Aplicatie {
         ecranModuri     = new EcranModuri(this);
         ecranSetari     = new EcranSetari(this);
         ecranStatistici = new EcranStatistici(this);
+        ecranDespre     = new EcranDespre(this);
         ecranJoc        = new EcranJoc(this);
 
         ecranCurent = ecranMeniu;
