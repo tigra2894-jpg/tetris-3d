@@ -65,12 +65,17 @@ public class EcranStatistici extends Ecran {
     @Override
     public void deseneaza(Desenator d) {
         d.seteazaProiectie(48f, d.raport, 1f, 90f);
-        d.seteazaCamera(0f, 0f, 26f, 0f, 0f, 0f);
-        d.seteazaLumina(
-                (float) Math.sin(timp * 0.45f) * 10f, 18f, 18f);
+
+        float leg = timp * 0.15f;
+        d.seteazaCamera(
+                (float) Math.sin(leg) * 0.6f,
+                (float) Math.cos(leg * 0.8f) * 0.35f,
+                26f, 0f, 0f, 0f);
 
         fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
+        fundal.deseneazaGrila(d, -11.0f, 14f);
+        contururiLaterale(d);
 
         app.ui.textCentrat("STATISTICI", 0.5f, Y_TITLU, 0.062f,
                 Color.rgb(220, 230, 255));
@@ -122,6 +127,24 @@ public class EcranStatistici extends Ecran {
 
         app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.030f,
                 Color.rgb(150, 160, 190));
+    }
+
+    private void contururiLaterale(Desenator d) {
+        float[] acc = fundal.accent();
+        float puls = 0.70f + 0.30f * (float) Math.sin(timp * 1.3f);
+
+        float st = -8.6f;
+        float dr =  8.6f;
+
+        for (float y = -11.0f; y <= 9.5f; y += 0.55f) {
+            float stins = 1f - Math.abs(y + 1f) / 13f;
+            if (stins < 0.10f) stins = 0.10f;
+
+            float a = 0.24f * puls * stins;
+
+            d.cub(st, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+            d.cub(dr, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+        }
     }
 
     private void celula(String eticheta, String valoare,
