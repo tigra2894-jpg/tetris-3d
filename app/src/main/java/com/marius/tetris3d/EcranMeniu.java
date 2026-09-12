@@ -18,7 +18,8 @@ public class EcranMeniu extends Ecran {
     private int apasat = -1;
     private float stralucire = 0f;
 
-    private static final int NR_PIESE = 6;
+    /** piesele care plutesc in fundal */
+    private static final int NR_PIESE = 7;
     private final float[] px = new float[NR_PIESE];
     private final float[] py = new float[NR_PIESE];
     private final float[] pz = new float[NR_PIESE];
@@ -26,6 +27,11 @@ public class EcranMeniu extends Ecran {
     private final float[] vitRot = new float[NR_PIESE];
     private final float[] vitY = new float[NR_PIESE];
     private final int[] tip = new int[NR_PIESE];
+
+    /** piese care se construiesc singure jos, ca un mic turn viu */
+    private static final int NR_TURN = 9;
+    private final int[] turnTip = new int[NR_TURN];
+    private final float[] turnFaza = new float[NR_TURN];
 
     private Fundal fundal;
 
@@ -35,13 +41,18 @@ public class EcranMeniu extends Ecran {
 
         java.util.Random rnd = new java.util.Random(11);
         for (int i = 0; i < NR_PIESE; i++) {
-            px[i] = (rnd.nextFloat() - 0.5f) * 16f;
+            px[i] = (rnd.nextFloat() - 0.5f) * 17f;
             py[i] = (rnd.nextFloat() - 0.5f) * 26f;
-            pz[i] = -8f - rnd.nextFloat() * 10f;
+            pz[i] = -7f - rnd.nextFloat() * 11f;
             rot[i] = rnd.nextFloat() * 360f;
-            vitRot[i] = 10f + rnd.nextFloat() * 18f;
+            vitRot[i] = 10f + rnd.nextFloat() * 20f;
             vitY[i] = 0.4f + rnd.nextFloat() * 0.9f;
             tip[i] = rnd.nextInt(7);
+        }
+
+        for (int i = 0; i < NR_TURN; i++) {
+            turnTip[i] = rnd.nextInt(7);
+            turnFaza[i] = rnd.nextFloat() * 6.28f;
         }
     }
 
@@ -85,11 +96,15 @@ public class EcranMeniu extends Ecran {
                 26f,
                 0f, 0f, 0f);
 
-        d.seteazaLumina(0f, 18f, 18f);
-
         fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
+
+        // podea cu grila, jos de tot
+        fundal.deseneazaGrila(d, -11.5f, 14f);
+
         deseneazaPieseFundal(d);
+        deseneazaTurnulViu(d);
+        deseneazaContururi(d);
 
         float apTitlu = intrare(0f, 0.5f);
         float pulsTitlu = 0.90f + 0.10f * puls(1.5f);
@@ -144,14 +159,56 @@ public class EcranMeniu extends Ecran {
             float[] cul = culori[tip[i]];
 
             for (int k = 0; k < 4; k++) {
-                float cx = px[i] + (forma[k][0] - 1.5f) * 0.80f;
-                float cy = py[i] + (forma[k][1] - 2.0f) * 0.80f;
+                float cx = px[i] + (forma[k][0] - 1.5f) * 0.82f;
+                float cy = py[i] + (forma[k][1] - 2.0f) * 0.82f;
 
                 d.cubRotit(cx, cy, pz[i],
                         rot[i], 0.5f, 1f, 0.3f,
-                        cul[0] * 0.75f, cul[1] * 0.75f, cul[2] * 0.75f,
-                        0.32f, 0.70f);
+                        cul[0] * 0.78f, cul[1] * 0.78f, cul[2] * 0.78f,
+                        0.36f, 0.72f);
             }
+        }
+    }
+
+    /** un mic turn care creste si se micsoreaza singur, jos pe podea */
+    private void deseneazaTurnulViu(Desenator d) {
+        float[][] culori = app.setari.culoriPiese();
+        float bazaY = -11.0f;
+
+        for (int i = 0; i < NR_TURN; i++) {
+            float p = 0.5f + 0.5f * (float) Math.sin(timp * 0.55f + turnFaza[i]);
+            int inaltime = 1 + (int) (p * 3.4f);
+
+            float x = (i - (NR_TURN - 1) / 2f) * 1.15f;
+            float[] cul = culori[turnTip[i]];
+
+            for (int n = 0; n < inaltime; n++) {
+                float alfa = 0.65f - n * 0.09f;
+                if (alfa < 0.15f) alfa = 0.15f;
+
+                d.cub(x, bazaY + n * 1.0f, -2.5f,
+                        cul[0] * 0.9f, cul[1] * 0.9f, cul[2] * 0.9f,
+                        alfa, 0.90f);
+            }
+        }
+    }
+
+    /** doua linii de lumina verticale, in lateral, ca la conturul tablei */
+    private void deseneazaContururi(Desenator d) {
+        float[] acc = fundal.accent();
+        float puls = 0.70f + 0.30f * (float) Math.sin(timp * 1.4f);
+
+        float st = -8.4f;
+        float dr =  8.4f;
+
+        for (float y = -11.5f; y <= 9.5f; y += 0.55f) {
+            float stins = 1f - Math.abs(y + 1f) / 13f;
+            if (stins < 0.10f) stins = 0.10f;
+
+            float a = 0.26f * puls * stins;
+
+            d.cub(st, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+            d.cub(dr, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
         }
     }
 
@@ -203,4 +260,4 @@ public class EcranMeniu extends Ecran {
         app.iesire();
         return true;
     }
-}
+        }
