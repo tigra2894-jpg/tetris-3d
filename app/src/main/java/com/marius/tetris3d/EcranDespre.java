@@ -9,15 +9,15 @@ import android.graphics.Color;
  */
 public class EcranDespre extends Ecran {
 
-    private static final float Y_TITLU  = 0.16f;
+    private static final float Y_TITLU  = 0.15f;
 
-    private static final float Y_R1     = 0.36f;
-    private static final float Y_R2     = 0.42f;
+    private static final float Y_R1     = 0.37f;
+    private static final float Y_R2     = 0.435f;
 
-    private static final float Y_CAFEA  = 0.58f;
-    private static final float Y_LINK   = 0.635f;
+    private static final float Y_CAFEA  = 0.60f;
+    private static final float Y_LINK   = 0.655f;
 
-    private static final float Y_INAPOI = 0.90f;
+    private static final float Y_INAPOI = 0.91f;
 
     private static final String LINK = "https://revolut.me/tibyy94";
 
@@ -25,7 +25,7 @@ public class EcranDespre extends Ecran {
 
     private Fundal fundal;
 
-    private static final int NR_PIESE = 4;
+    private static final int NR_PIESE = 5;
     private final float[] px = new float[NR_PIESE];
     private final float[] py = new float[NR_PIESE];
     private final float[] pz = new float[NR_PIESE];
@@ -40,9 +40,9 @@ public class EcranDespre extends Ecran {
 
         java.util.Random rnd = new java.util.Random(77);
         for (int i = 0; i < NR_PIESE; i++) {
-            px[i] = (rnd.nextFloat() - 0.5f) * 15f;
+            px[i] = (rnd.nextFloat() - 0.5f) * 16f;
             py[i] = (rnd.nextFloat() - 0.5f) * 24f;
-            pz[i] = -9f - rnd.nextFloat() * 9f;
+            pz[i] = -8f - rnd.nextFloat() * 9f;
             rot[i] = rnd.nextFloat() * 360f;
             vitRot[i] = 9f + rnd.nextFloat() * 15f;
             vitY[i] = 0.35f + rnd.nextFloat() * 0.7f;
@@ -79,16 +79,16 @@ public class EcranDespre extends Ecran {
     public void deseneaza(Desenator d) {
         d.seteazaProiectie(48f, d.raport, 1f, 90f);
 
-        float leg = timp * 0.18f;
+        float leg = timp * 0.15f;
         d.seteazaCamera(
-                (float) Math.sin(leg) * 0.7f,
-                (float) Math.cos(leg * 0.8f) * 0.4f,
+                (float) Math.sin(leg) * 0.6f,
+                (float) Math.cos(leg * 0.8f) * 0.35f,
                 26f, 0f, 0f, 0f);
-
-        d.seteazaLumina(0f, 18f, 18f);
 
         fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
+        fundal.deseneazaGrila(d, -11.0f, 14f);
+        contururiLaterale(d);
         pieseFundal(d);
 
         float ap = intrare(0f, 0.5f);
@@ -96,16 +96,16 @@ public class EcranDespre extends Ecran {
         app.ui.textCentrat("DESPRE", 0.5f, Y_TITLU, 0.070f,
                 culoare(220, 230, 255, ap));
 
-        float ap1 = intrare(0.10f, 0.45f);
+        float ap1 = intrare(0.12f, 0.45f);
         app.ui.textCentrat("UN JOC FACUT CU DRAG,", 0.5f, Y_R1, 0.030f,
                 culoare(200, 210, 235, ap1));
 
-        float ap2 = intrare(0.20f, 0.45f);
-        app.ui.textCentrat("DE TIBERIU.", 0.5f, Y_R2, 0.034f,
+        float ap2 = intrare(0.24f, 0.45f);
+        app.ui.textCentrat("DE TIBERIU.", 0.5f, Y_R2, 0.038f,
                 culoare(255, 220, 130, ap2));
 
-        float ap3 = intrare(0.40f, 0.5f);
-        float p = 0.85f + 0.15f * puls(1.4f);
+        float ap3 = intrare(0.45f, 0.5f);
+        float p = 0.85f + 0.15f * puls(1.3f);
 
         app.ui.textCentrat("O CAFEA", 0.5f, Y_CAFEA, 0.024f,
                 culoare(150, 160, 190, ap3));
@@ -118,6 +118,24 @@ public class EcranDespre extends Ecran {
 
         app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.030f,
                 Color.rgb(150, 160, 190));
+    }
+
+    private void contururiLaterale(Desenator d) {
+        float[] acc = fundal.accent();
+        float puls = 0.70f + 0.30f * (float) Math.sin(timp * 1.2f);
+
+        float st = -8.6f;
+        float dr =  8.6f;
+
+        for (float y = -11.0f; y <= 9.5f; y += 0.55f) {
+            float stins = 1f - Math.abs(y + 1f) / 13f;
+            if (stins < 0.10f) stins = 0.10f;
+
+            float a = 0.22f * puls * stins;
+
+            d.cub(st, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+            d.cub(dr, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+        }
     }
 
     private float intrare(float intarziere, float durata) {
@@ -140,13 +158,13 @@ public class EcranDespre extends Ecran {
             float[] cul = culori[tip[i]];
 
             for (int k = 0; k < 4; k++) {
-                float cx = px[i] + (forma[k][0] - 1.5f) * 0.78f;
-                float cy = py[i] + (forma[k][1] - 2.0f) * 0.78f;
+                float cx = px[i] + (forma[k][0] - 1.5f) * 0.80f;
+                float cy = py[i] + (forma[k][1] - 2.0f) * 0.80f;
 
                 d.cubRotit(cx, cy, pz[i],
                         rot[i], 0.5f, 1f, 0.3f,
-                        cul[0] * 0.70f, cul[1] * 0.70f, cul[2] * 0.70f,
-                        0.28f, 0.66f);
+                        cul[0] * 0.72f, cul[1] * 0.72f, cul[2] * 0.72f,
+                        0.30f, 0.68f);
             }
         }
     }
