@@ -50,12 +50,17 @@ public class EcranSetari extends Ecran {
     @Override
     public void deseneaza(Desenator d) {
         d.seteazaProiectie(48f, d.raport, 1f, 90f);
-        d.seteazaCamera(0f, 0f, 26f, 0f, 0f, 0f);
-        d.seteazaLumina(
-                (float) Math.sin(timp * 0.5f) * 10f, 18f, 18f);
+
+        float leg = timp * 0.16f;
+        d.seteazaCamera(
+                (float) Math.sin(leg) * 0.6f,
+                (float) Math.cos(leg * 0.8f) * 0.35f,
+                26f, 0f, 0f, 0f);
 
         fundal.deseneazaCeata(d);
         app.stele.deseneaza2(d);
+        fundal.deseneazaGrila(d, -11.0f, 14f);
+        contururiLaterale(d);
 
         app.ui.textCentrat("SETARI", 0.5f, Y_TITLU, 0.072f,
                 Color.rgb(220, 230, 255));
@@ -88,20 +93,19 @@ public class EcranSetari extends Ecran {
         app.ui.textCentrat("<", 0.18f, Y_VITEZA_V, 0.046f, Color.rgb(150, 190, 255));
         app.ui.textCentrat(">", 0.82f, Y_VITEZA_V, 0.046f, Color.rgb(150, 190, 255));
 
-        // cinci trepte, cuburi 3D
         float[][] culori = app.setari.culoriPiese();
         for (int i = 1; i <= 5; i++) {
             boolean plina = i <= v;
             float x = (i - 3f) * 1.5f;
             float y = 0.2f;
-            float s = plina ? 0.52f : 0.34f;
+            float s = plina ? 0.54f : 0.34f;
 
             float[] cul = plina ? culori[(i - 1) % culori.length]
-                                : new float[]{0.22f, 0.24f, 0.32f};
+                                : new float[]{0.20f, 0.22f, 0.30f};
 
-            float rotc = plina ? timp * 30f + i * 40f : 0f;
+            float rotc = plina ? timp * 28f + i * 40f : 0f;
             d.cubRotit(x, y, 0f, rotc, 0.4f, 1f, 0.3f,
-                    cul[0], cul[1], cul[2], plina ? 1f : 0.55f, s);
+                    cul[0], cul[1], cul[2], plina ? 1f : 0.5f, s);
         }
 
         // ---------- tema ----------
@@ -113,7 +117,7 @@ public class EcranSetari extends Ecran {
                 Color.rgb(220, 190, 255));
 
         for (int i = 0; i < 7; i++) {
-            float rotP = timp * 26f + i * 40f;
+            float rotP = timp * 24f + i * 40f;
             d.cubRotit((i - 3f) * 1.4f, -6.2f, 0f,
                     rotP, 0.4f, 1f, 0.3f,
                     culori[i][0], culori[i][1], culori[i][2],
@@ -122,6 +126,24 @@ public class EcranSetari extends Ecran {
 
         app.ui.textCentrat("INAPOI", 0.5f, Y_INAPOI, 0.030f,
                 Color.rgb(150, 160, 190));
+    }
+
+    private void contururiLaterale(Desenator d) {
+        float[] acc = fundal.accent();
+        float puls = 0.70f + 0.30f * (float) Math.sin(timp * 1.3f);
+
+        float st = -8.6f;
+        float dr =  8.6f;
+
+        for (float y = -11.0f; y <= 9.5f; y += 0.55f) {
+            float stins = 1f - Math.abs(y + 1f) / 13f;
+            if (stins < 0.10f) stins = 0.10f;
+
+            float a = 0.24f * puls * stins;
+
+            d.cub(st, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+            d.cub(dr, y, -3.5f, acc[0], acc[1], acc[2], a, 0.11f);
+        }
     }
 
     @Override
@@ -175,4 +197,4 @@ public class EcranSetari extends Ecran {
     public boolean inapoi() {
         return false;
     }
-}
+                    }
