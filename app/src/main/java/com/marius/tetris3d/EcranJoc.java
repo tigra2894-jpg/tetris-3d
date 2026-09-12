@@ -156,6 +156,7 @@ public class EcranJoc extends Ecran {
 
         umbrePiesa(d);
         blocuri(d);
+        valLumina(d);
 
         if (stare == STARE_JOC) piesaCurenta(d);
 
@@ -207,19 +208,36 @@ public class EcranJoc extends Ecran {
         }
     }
 
-    /** umbra piesei care cade, proiectata pe blocuri si pe podea */
+    /** valul de lumina care trece prin randul tocmai sters */
+    private void valLumina(Desenator d) {
+        if (joc.valLumina <= 0f || joc.randValLumina < 0) return;
+
+        float v = joc.valLumina;
+        float y = offY + joc.randValLumina;
+
+        // o bara luminoasa care se largeste si se stinge
+        float latime = (1f - v) * 1.4f;
+        float alfa = v * v * 0.85f;
+
+        for (int c = 0; c < Joc.COLOANE; c++) {
+            d.cub(offX + c, y, 0.25f,
+                    1.0f, 1.0f, 0.92f, alfa, 0.95f + latime * 0.35f);
+
+            d.cub(offX + c, y, 0.35f,
+                    1.0f, 0.95f, 0.75f, alfa * 0.45f, 1.25f + latime * 0.7f);
+        }
+    }
+
     private void umbrePiesa(Desenator d) {
         if (stare != STARE_JOC) return;
 
         int[][] forma = joc.formaCurenta();
         float yPiesa = joc.pieseYVizual();
-        int yAteriz = joc.pozitieFantoma();
 
         for (int i = 0; i < 4; i++) {
             int c = joc.pieseX + forma[i][0];
             if (c < 0 || c >= Joc.COLOANE) continue;
 
-            // gaseste prima suprafata de sub patratel
             int yBaza = (int) Math.floor(yPiesa) + forma[i][1];
             int ySupr = -1;
 
@@ -237,7 +255,6 @@ public class EcranJoc extends Ecran {
             float dist = (offY + yBaza) - yUmbra;
             if (dist < 0f) continue;
 
-            // umbra e mai clara cand piesa e aproape
             float putere = 1f - Math.min(1f, dist / 9f);
             putere *= putere;
 
@@ -289,11 +306,20 @@ public class EcranJoc extends Ecran {
                   -0.15f, cul[0], cul[1], cul[2], pf, 0.88f);
         }
 
-        // piesa
+        // animatia de rotire: fiecare patratel se rasuceste in jurul lui
+        float unghiRot = joc.animRotire * 90f * joc.directieRotire;
+
         for (int i = 0; i < 4; i++) {
-            d.cub(offX + joc.pieseX + forma[i][0],
-                  offY + yPiesa + forma[i][1],
-                  0f, cul[0], cul[1], cul[2], 1f, 1f);
+            float cx = offX + joc.pieseX + forma[i][0];
+            float cy = offY + yPiesa + forma[i][1];
+
+            if (joc.animRotire > 0.01f) {
+                d.cubRotit(cx, cy, 0f,
+                        unghiRot, 0f, 0f, 1f,
+                        cul[0], cul[1], cul[2], 1f, 1f);
+            } else {
+                d.cub(cx, cy, 0f, cul[0], cul[1], cul[2], 1f, 1f);
+            }
         }
     }
 
@@ -476,4 +502,4 @@ public class EcranJoc extends Ecran {
         }
         return false;
     }
-    }
+            }
