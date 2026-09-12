@@ -7,6 +7,10 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+/**
+ * Cub cu muchii foarte rotunjite, contur luminos pe margini,
+ * reflexii colorate din mediu si textura subtila pe suprafata.
+ */
 public class Cub {
 
     private static final String COD_VARFURI =
@@ -16,8 +20,8 @@ public class Cub {
             "attribute vec3 aNormal;\n" +
             "attribute vec2 aUV;\n" +
             "varying vec3 vNormal;\n" +
-            "varying vec3 vLume;\n" +
             "varying vec2 vUV;\n" +
+            "varying vec3 vLume;\n" +
             "void main() {\n" +
             "  vNormal = normalize((uModel * vec4(aNormal, 0.0)).xyz);\n" +
             "  vLume = (uModel * aPos).xyz;\n" +
@@ -27,34 +31,78 @@ public class Cub {
 
     private static final String COD_PIXELI =
             "precision mediump float;\n" +
-            "uniform vec3 uLumina;\n" +
-            "uniform vec3 uCamera;\n" +
             "uniform vec4 uCuloare;\n" +
             "varying vec3 vNormal;\n" +
-            "varying vec3 vLume;\n" +
             "varying vec2 vUV;\n" +
+            "varying vec3 vLume;\n" +
+
+            "const vec3 L  = normalize(vec3(0.35, 0.82, 0.45));\n" +
+            "const vec3 V  = vec3(0.0, 0.0, 1.0);\n" +
+            // lumini colorate din mediu, ca de la neoane
+            "const vec3 NEON_A = normalize(vec3(-0.85, 0.15, 0.50));\n" +
+            "const vec3 NEON_B = normalize(vec3( 0.80, -0.25, 0.55));\n" +
+            "const vec3 CUL_A = vec3(1.00, 0.35, 0.85);\n" +   // roz
+            "const vec3 CUL_B = vec3(0.25, 0.85, 1.00);\n" +   // cyan
+
+            // zgomot simplu, pentru textura subtila
+            "float zgomot(vec2 p) {\n" +
+            "  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);\n" +
+            "}\n" +
+
             "void main() {\n" +
             "  vec2 d = abs(vUV - 0.5) * 2.0;\n" +
-            "  float margine = max(d.x, d.y);\n" +
-            "  float tesitura = 1.0 - smoothstep(0.76, 1.0, margine);\n" +
+            // muchii mult mai rotunjite, ca niste pernute
+            "  float colt = length(max(d - 0.52, 0.0)) / 0.48;\n" +
+            "  if (colt > 1.0) discard;\n" +
+            "  float rotunjire = 1.0 - smoothstep(0.86, 1.0, colt);\n" +
+
             "  vec3 N = normalize(vNormal);\n" +
-            "  vec3 L = normalize(uLumina - vLume);\n" +
-            "  vec3 V = normalize(uCamera - vLume);\n" +
             "  vec3 H = normalize(L + V);\n" +
-            "  float difuz = max(dot(N, L), 0.0);\n" +
-            "  float spec = pow(max(dot(N, H), 0.0), 72.0);\n" +
-            "  float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.4);\n" +
+
+            "  float dif  = max(dot(N, L), 0.0);\n" +
+            "  float sus  = max(N.y, 0.0);\n" +
+            "  float fata = max(N.z, 0.0);\n" +
+            "  float lat  = abs(N.x);\n" +
+            "  float jos  = max(-N.y, 0.0);\n" +
+
             "  vec3 baza = uCuloare.rgb;\n" +
-            "  vec3 culoare = baza * 0.20;\n" +
-            "  culoare += baza * difuz * difuz * 1.10;\n" +
-            "  culoare += vec3(1.0, 0.97, 0.90) * spec * 0.95;\n" +
-            "  culoare += baza * fresnel * 0.65;\n" +
-            "  culoare *= (0.58 + 0.42 * tesitura);\n" +
-            "  culoare += baza * (1.0 - tesitura) * 0.35;\n" +
-            "  gl_FragColor = vec4(culoare, uCuloare.a);\n" +
+
+            // luminozitate diferita pe fiecare fata, dar umbra ramane colorata
+            "  float nivel = 0.34\n" +
+            "              + sus  * 0.78\n" +
+            "              + fata * 0.42\n" +
+            "              + lat  * 0.16\n" +
+            "              - jos  * 0.10\n" +
+            "              + dif  * 0.22;\n" +
+            "  vec3 culoare = baza * nivel;\n" +
+
+            // reflexii colorate din mediu, ca de la neoanele din jur
+            "  float refA = pow(max(dot(N, NEON_A), 0.0), 2.2);\n" +
+            "  float refB = pow(max(dot(N, NEON_B), 0.0), 2.2);\n" +
+            "  culoare += CUL_A * refA * 0.22;\n" +
+            "  culoare += CUL_B * refB * 0.20;\n" +
+
+            // pata moale de lumina pe fata de sus
+            "  float pata = pow(max(dot(N, H), 0.0), 12.0);\n" +
+            "  culoare += vec3(1.0, 0.98, 0.94) * pata * (0.18 + sus * 0.45);\n" +
+
+            // sclipire mica si ascutita
+            "  float sclip = pow(max(dot(N, H), 0.0), 70.0);\n" +
+            "  culoare += vec3(1.0) * sclip * (0.20 + sus * 0.40);\n" +
+
+            // conturul luminos de pe muchii, de culoarea blocului
+            "  float contur = smoothstep(0.55, 0.98, colt);\n" +
+            "  vec3 culContur = baza * 1.5 + vec3(0.28);\n" +
+            "  culoare = mix(culoare, culContur, contur * 0.55);\n" +
+
+            // textura subtila, zgarieturi fine
+            "  float t = zgomot(floor(vUV * 42.0));\n" +
+            "  culoare *= 0.965 + t * 0.070;\n" +
+
+            "  gl_FragColor = vec4(culoare, uCuloare.a * rotunjire);\n" +
             "}\n";
 
-    private static final float S = 0.46f;
+    private static final float S = 0.47f;
 
     private static final float[] VARFURI = {
             -S,-S, S,  0,0,1,  0,0,   S,-S, S,  0,0,1,  1,0,
@@ -82,10 +130,7 @@ public class Cub {
 
     private final int program;
     private final int locPos, locNormal, locUV;
-    private final int locMVP, locModel, locLumina, locCamera, locCuloare;
-
-    private final float[] lumina = {10f, 16f, 14f};
-    private static final float[] CAMERA = {0f, 1.5f, 26f};
+    private final int locMVP, locModel, locCuloare;
 
     public Cub() {
         ByteBuffer bv = ByteBuffer.allocateDirect(VARFURI.length * 4);
@@ -111,8 +156,6 @@ public class Cub {
         locUV      = GLES20.glGetAttribLocation(program, "aUV");
         locMVP     = GLES20.glGetUniformLocation(program, "uMVP");
         locModel   = GLES20.glGetUniformLocation(program, "uModel");
-        locLumina  = GLES20.glGetUniformLocation(program, "uLumina");
-        locCamera  = GLES20.glGetUniformLocation(program, "uCamera");
         locCuloare = GLES20.glGetUniformLocation(program, "uCuloare");
     }
 
@@ -124,7 +167,6 @@ public class Cub {
     }
 
     public void seteazaLumina(float x, float y, float z) {
-        lumina[0] = x; lumina[1] = y; lumina[2] = z;
     }
 
     public void deseneaza(float[] mvp, float[] model,
@@ -148,8 +190,6 @@ public class Cub {
 
         GLES20.glUniformMatrix4fv(locMVP, 1, false, mvp, 0);
         GLES20.glUniformMatrix4fv(locModel, 1, false, model, 0);
-        GLES20.glUniform3f(locLumina, lumina[0], lumina[1], lumina[2]);
-        GLES20.glUniform3f(locCamera, CAMERA[0], CAMERA[1], CAMERA[2]);
         GLES20.glUniform4f(locCuloare, r, g, b, alfa);
 
         bufIndici.position(0);
