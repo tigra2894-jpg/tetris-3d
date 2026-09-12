@@ -20,6 +20,9 @@ public class EcranJoc extends Ecran {
     private float timpJucat = 0f;
     private int secundeRaportate = 0;
 
+    /** cat timp a trecut de cand a inceput finalul */
+    private float timpFinal = 0f;
+
     private float offX, offY;
     private float[][] culori;
 
@@ -62,6 +65,7 @@ public class EcranJoc extends Ecran {
         fundal.seteazaAccent(modLiber);
         stare = STARE_JOC;
         timpJucat = 0f;
+        timpFinal = 0f;
         secundeRaportate = 0;
         app.setari.adaugaJoc();
     }
@@ -123,10 +127,12 @@ public class EcranJoc extends Ecran {
 
             if (joc.terminat) {
                 stare = STARE_FINAL;
+                timpFinal = 0f;
                 salveaza();
             }
         } else {
             joc.stingeEfecte(dt);
+            if (stare == STARE_FINAL) timpFinal += dt;
         }
     }
 
@@ -162,7 +168,7 @@ public class EcranJoc extends Ecran {
 
         particule.deseneaza2(d, offX, offY);
 
-        if (!modLiber) {
+        if (!modLiber && stare == STARE_JOC) {
             piesaUrmatoare(d);
         }
         interfata();
@@ -176,26 +182,32 @@ public class EcranJoc extends Ecran {
         float ap = activ ? joc.apropiere() : 0f;
         float[] acc = fundal.accent();
 
+        // la final, podeaua se stinge si ea
+        float stins = (stare == STARE_FINAL)
+                ? Math.max(0f, 1f - joc.stingereFinal / 8f) : 1f;
+
         for (int c = 0; c < Joc.COLOANE; c++) {
             boolean tinta = activ && joc.coloanaTinta(c);
 
             float r = acc[0] * 0.26f;
             float g = acc[1] * 0.28f;
             float b = acc[2] * 0.40f;
-            float a = 0.78f;
+            float a = 0.78f * stins;
 
             if (tinta) {
                 float caldura = ap * ap;
                 r = r + caldura * (1.00f - r);
                 g = g + caldura * (0.42f - g);
                 b = b + caldura * (0.18f - b);
-                a = 0.78f + caldura * 0.22f;
+                a = (0.78f + caldura * 0.22f) * stins;
             }
             d.cub(offX + c, offY - 1f, -0.35f, r, g, b, a, 0.90f);
         }
     }
 
     private void reflexii(Desenator d) {
+        if (stare == STARE_FINAL) return;
+
         for (int r = 0; r < 6 && r < Joc.RANDURI; r++) {
             for (int c = 0; c < Joc.COLOANE; c++) {
                 int val = joc.tabla[r][c];
@@ -208,14 +220,12 @@ public class EcranJoc extends Ecran {
         }
     }
 
-    /** valul de lumina care trece prin randul tocmai sters */
     private void valLumina(Desenator d) {
         if (joc.valLumina <= 0f || joc.randValLumina < 0) return;
 
         float v = joc.valLumina;
         float y = offY + joc.randValLumina;
 
-        // o bara luminoasa care se largeste si se stinge
         float latime = (1f - v) * 1.4f;
         float alfa = v * v * 0.85f;
 
@@ -266,8 +276,14 @@ public class EcranJoc extends Ecran {
         boolean activ = (stare == STARE_JOC);
         float ap = activ ? joc.apropiere() : 0f;
         int yFantoma = activ ? joc.pozitieFantoma() : -1;
+        boolean final_ = (stare == STARE_FINAL);
 
         for (int r = 0; r < Joc.RANDURI; r++) {
+
+            // la final, randurile se sting de sus in jos
+            float stins = final_ ? joc.stinsRand(r) : 0f;
+            if (stins >= 0.995f) continue;
+
             for (int c = 0; c < Joc.COLOANE; c++) {
                 int val = joc.tabla[r][c];
                 if (val == 0) continue;
@@ -283,11 +299,26 @@ public class EcranJoc extends Ecran {
 
                 float lum = 1f + (simte ? ap * 0.30f : 0f) + trem * 0.16f;
 
-                d.cub(offX + c + dx, offY + r + dy, 0f,
-                        Math.min(1f, cul[0] * lum),
-                        Math.min(1f, cul[1] * lum),
-                        Math.min(1f, cul[2] * lum),
-                        1f, 1f);
+                float rr = Math.min(1f, cul[0] * lum);
+                float gg = Math.min(1f, cul[1] * lum);
+                float bb = Math.min(1f, cul[2] * lum);
+                float alfa = 1f;
+                float scara = 1f;
+
+                if (final_ && stins > 0f) {
+                    // blocul se aprinde alb o clipa, apoi se stinge si se micsoreaza
+                    float aprindere = 1f - Math.abs(stins - 0.22f) * 4.0f;
+                    if (aprindere > 0f) {
+                        rr = rr + (1f - rr) * aprindere * 0.85f;
+                        gg = gg + (1f - gg) * aprindere * 0.85f;
+                        bb = bb + (1f - bb) * aprindere * 0.85f;
+                    }
+                    alfa = 1f - stins;
+                    scara = 1f - stins * 0.55f;
+                    dy -= stins * 0.35f;
+                }
+
+                d.cub(offX + c + dx, offY + r + dy, 0f, rr, gg, bb, alfa, scara);
             }
         }
     }
@@ -297,7 +328,6 @@ public class EcranJoc extends Ecran {
         float[] cul = culori[joc.tipCurent];
         float yPiesa = joc.pieseYVizual();
 
-        // fantoma unde va cadea
         int yF = joc.pozitieFantoma();
         float pf = 0.13f + 0.09f * puls(2.6f);
         for (int i = 0; i < 4; i++) {
@@ -306,7 +336,6 @@ public class EcranJoc extends Ecran {
                   -0.15f, cul[0], cul[1], cul[2], pf, 0.88f);
         }
 
-        // animatia de rotire: fiecare patratel se rasuceste in jurul lui
         float unghiRot = joc.animRotire * 90f * joc.directieRotire;
 
         for (int i = 0; i < 4; i++) {
@@ -372,31 +401,43 @@ public class EcranJoc extends Ecran {
     }
 
     private void ecranFinal() {
+        // panoul apare treptat, dupa ce blocurile s-au stins
+        float ap = (timpFinal - 0.9f) / 0.6f;
+        if (ap < 0f) ap = 0f;
+        if (ap > 1f) ap = 1f;
+        if (ap <= 0.01f) return;
+
         float clip = 0.75f + 0.25f * puls(3f);
+        int alfaPanou = (int) (165 * ap);
 
         app.ui.panou(0.5f - 0.34f, Y_F_TITLU - 0.06f, 0.68f, 0.68f,
-                Color.argb(160, 8, 10, 20), 0.03f);
+                Color.argb(alfaPanou, 8, 10, 20), 0.03f);
 
         app.ui.textCentrat("FINAL", 0.5f, Y_F_TITLU, 0.060f,
-                Color.rgb((int) (255 * clip), 90, 90));
+                cul((int) (255 * clip), 90, 90, ap));
 
-        app.ui.textCentrat("SCOR", 0.5f, Y_F_SCORL, 0.022f, Color.rgb(150, 160, 190));
+        app.ui.textCentrat("SCOR", 0.5f, Y_F_SCORL, 0.022f, cul(150, 160, 190, ap));
         app.ui.textCentrat(String.valueOf(joc.scor), 0.5f, Y_F_SCORV, 0.052f,
-                Color.rgb(255, 225, 130));
+                cul(255, 225, 130, ap));
 
         boolean recordNou = joc.scor >= joc.record && joc.scor > 0;
         if (recordNou) {
             float p = 0.6f + 0.4f * puls(5f);
             app.ui.textCentrat("RECORD NOU", 0.5f, Y_F_RECL + 0.02f, 0.028f,
-                    Color.rgb(255, (int) (215 * p), (int) (60 * p)));
+                    cul(255, (int) (215 * p), (int) (60 * p), ap));
         } else {
-            app.ui.textCentrat("RECORD", 0.5f, Y_F_RECL, 0.020f, Color.rgb(150, 160, 190));
+            app.ui.textCentrat("RECORD", 0.5f, Y_F_RECL, 0.020f, cul(150, 160, 190, ap));
             app.ui.textCentrat(String.valueOf(joc.record), 0.5f, Y_F_RECV, 0.028f,
-                    Color.rgb(200, 190, 230));
+                    cul(200, 190, 230, ap));
         }
 
-        buton("DIN NOU", Y_F_DIN_NOU, 0.040f, Color.rgb(100, 255, 140));
-        buton("MENIU",   Y_F_MENIU,   0.034f, Color.rgb(180, 190, 230));
+        app.ui.textCentrat("DIN NOU", 0.5f, Y_F_DIN_NOU, 0.040f, cul(100, 255, 140, ap));
+        app.ui.textCentrat("MENIU",   0.5f, Y_F_MENIU,   0.034f, cul(180, 190, 230, ap));
+    }
+
+    private int cul(int r, int g, int b, float alfa) {
+        int a = (int) (Math.max(0f, Math.min(1f, alfa)) * 255);
+        return Color.argb(a, r, g, b);
     }
 
     private void buton(String s, float yFrac, float marime, int culoare) {
@@ -422,6 +463,9 @@ public class EcranJoc extends Ecran {
         }
 
         if (stare == STARE_FINAL) {
+            // nu raspunde la atingeri cat timp inca se sting blocurile
+            if (timpFinal < 1.2f) return true;
+
             if (inRand(y, Y_F_DIN_NOU, 0.06f)) {
                 pregateste(mod, modLiber);
                 app.sunet.nivel();
