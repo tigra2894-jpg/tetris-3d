@@ -62,18 +62,20 @@ public class Joc {
     private float alunecare = 0f;
 
     private static final int LINII_PE_NIVEL = 8;
-    private static final int CRAPATURI_MAX = 3;
 
     public final float[] tremurRand = new float[RANDURI];
     public float cutremurGlobal = 0f;
 
-    /** animatia de rotire: merge de la 1 la 0 dupa fiecare rotire */
     public float animRotire = 0f;
     public int directieRotire = 1;
 
-    /** randul care tocmai s-a completat, pentru valul de lumina */
     public int randValLumina = -1;
     public float valLumina = 0f;
+
+    /** cate randuri s-au stins la final; merge de sus in jos */
+    public float stingereFinal = 0f;
+    /** true cat timp ruleaza animatia de final */
+    public boolean seStinge = false;
 
     public Joc() {
         tipUrmator = rnd.nextInt(7);
@@ -91,6 +93,8 @@ public class Joc {
         animRotire = 0f;
         if (ciocnire(pieseX, pieseY, rotatie)) {
             terminat = true;
+            seStinge = true;
+            stingereFinal = 0f;
             if (scor > record) record = scor;
             if (sunet != null) sunet.final_();
         }
@@ -111,6 +115,8 @@ public class Joc {
         blocuriSparte = 0;
         vitezaCadere = vitezaInitiala;
         terminat = false;
+        seStinge = false;
+        stingereFinal = 0f;
         cutremurGlobal = 0f;
         animRotire = 0f;
         valLumina = 0f;
@@ -160,7 +166,6 @@ public class Joc {
         }
     }
 
-    /** MOD LIBER: cicleaza prin cele 7 piese, plus varianta verticala a barei */
     public void schimbaForma() {
         if (terminat) return;
 
@@ -309,7 +314,6 @@ public class Joc {
                 if (tabla[r][c] == 0) { plin = false; break; }
             }
             if (plin) {
-                // valul de lumina porneste de la randul sters
                 randValLumina = r;
                 valLumina = 1f;
 
@@ -411,5 +415,26 @@ public class Joc {
             valLumina = 0f;
             randValLumina = -1;
         }
+
+        // stingerea de final: rand cu rand, de sus in jos
+        if (seStinge) {
+            stingereFinal += dt * 16f;
+            if (stingereFinal >= RANDURI + 3) {
+                stingereFinal = RANDURI + 3;
+                seStinge = false;
+            }
+        }
     }
+
+    /** cat de stins e un rand la final: 0 = intact, 1 = complet stins */
+    public float stinsRand(int rand) {
+        if (stingereFinal <= 0f) return 0f;
+
+        float prag = RANDURI - stingereFinal;
+        float dif = rand - prag;
+
+        if (dif > 1.4f) return 0f;
+        if (dif < 0f) return 1f;
+        return 1f - dif / 1.4f;
     }
+}
