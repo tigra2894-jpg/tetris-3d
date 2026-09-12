@@ -12,6 +12,7 @@ public class EcranMeniu extends Ecran {
     private static final float Y_SETARI = 0.69f;
     private static final float Y_STAT   = 0.78f;
     private static final float Y_IESIRE = 0.87f;
+    private static final float Y_AUTOR  = 0.965f;
     private static final float GROSIME  = 0.055f;
 
     private int apasat = -1;
@@ -102,100 +103,3 @@ public class EcranMeniu extends Ecran {
                 culoare(60, (int) (225 * pulsTitlu), 255, apTitlu));
 
         optiune("JOACA",      0, Y_JOACA,  0.056f, 110, 255, 150);
-        optiune("MODURI",     1, Y_MODURI, 0.046f, 140, 205, 255);
-        optiune("SETARI",     2, Y_SETARI, 0.046f, 220, 180, 255);
-        optiune("STATISTICI", 3, Y_STAT,   0.038f, 180, 190, 230);
-        optiune("IESIRE",     4, Y_IESIRE, 0.038f, 255, 120, 120);
-    }
-
-    private float intrare(float intarziere, float durata) {
-        float t = (timp - intarziere) / durata;
-        if (t < 0f) return 0f;
-        if (t > 1f) return 1f;
-        return t * t * (3f - 2f * t);
-    }
-
-    private void optiune(String s, int index, float yFrac, float marime,
-                         int r, int g, int b) {
-        float ap = intrare(index * 0.08f, 0.4f);
-
-        float lum = 1f;
-        if (apasat == index) lum = 1f + stralucire * 0.7f;
-
-        int cul = culoare(
-                (int) Math.min(255, r * lum),
-                (int) Math.min(255, g * lum),
-                (int) Math.min(255, b * lum),
-                ap);
-
-        app.ui.textCentrat(s, 0.5f, yFrac, marime, cul);
-    }
-
-    private int culoare(int r, int g, int b, float alfa) {
-        int a = (int) (Math.max(0f, Math.min(1f, alfa)) * 255);
-        return Color.argb(a, r, g, b);
-    }
-
-    private void deseneazaPieseFundal(Desenator d) {
-        float[][] culori = app.setari.culoriPiese();
-
-        for (int i = 0; i < NR_PIESE; i++) {
-            int[][] forma = Joc.formaPiesei(tip[i], 0);
-            float[] cul = culori[tip[i]];
-
-            for (int k = 0; k < 4; k++) {
-                float cx = px[i] + (forma[k][0] - 1.5f) * 0.80f;
-                float cy = py[i] + (forma[k][1] - 2.0f) * 0.80f;
-
-                d.cubRotit(cx, cy, pz[i],
-                        rot[i], 0.5f, 1f, 0.3f,
-                        cul[0] * 0.75f, cul[1] * 0.75f, cul[2] * 0.75f,
-                        0.35f, 0.70f);
-            }
-        }
-    }
-
-    @Override
-    public boolean atingere(float x, float y) {
-
-        if (inRand(y, Y_JOACA, GROSIME)) {
-            apasa(0);
-            int m = app.setari.ultimulMod();
-            app.jocNou(m, m == Setari.MOD_LIBER);
-            return true;
-        }
-        if (inRand(y, Y_MODURI, GROSIME)) {
-            apasa(1);
-            app.mergiLa(app.ecranModuri);
-            return true;
-        }
-        if (inRand(y, Y_SETARI, GROSIME)) {
-            apasa(2);
-            app.mergiLa(app.ecranSetari);
-            return true;
-        }
-        if (inRand(y, Y_STAT, GROSIME)) {
-            apasa(3);
-            app.mergiLa(app.ecranStatistici);
-            return true;
-        }
-        if (inRand(y, Y_IESIRE, GROSIME)) {
-            apasa(4);
-            app.iesire();
-            return true;
-        }
-        return false;
-    }
-
-    private void apasa(int index) {
-        apasat = index;
-        stralucire = 1f;
-        app.sunet.rotire();
-    }
-
-    @Override
-    public boolean inapoi() {
-        app.iesire();
-        return true;
-    }
-}
