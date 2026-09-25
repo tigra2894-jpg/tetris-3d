@@ -59,6 +59,16 @@ public class CapaUI {
 
     /** cutia pentru HOLD / NEXT (assets/texturi/cutie_piesa.png), alb pe transparent */
     public Bitmap cutiePiesa;
+
+    /**
+     * bara HUD (assets/texturi/bara_hud.png), 3 compartimente egale. Masuratori in
+     * pixeli pe imaginea de 1412x145 (se scaleaza dupa marimea reala a imaginii).
+     */
+    public Bitmap baraHud;
+    private static final float HUD_W = 1412f, HUD_H = 145f;
+    private static final float HUD_ST = 20f, HUD_DR = 1391.5f, HUD_SUS = 20f, HUD_JOS = 124.5f;
+    private static final float HUD_D1 = 477f, HUD_D2 = 934.5f, HUD_K = 14f;
+    private static final float HUD_CX = 80f, HUD_CY = 36f;
     private static final float CUTIE_MARGINE = 45f / 774f;   // de la marginea imaginii la linia neon
 
     private final Paint paintRama = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
@@ -224,6 +234,7 @@ public class CapaUI {
     private static final int C_RAMA = 7;
     private static final int C_DIALOG = 8;
     private static final int C_CUTIE = 9;
+    private static final int C_HUD = 10;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -268,6 +279,7 @@ public class CapaUI {
                 case C_RAMA:   redaRama(i); break;
                 case C_DIALOG: redaDialog(i); break;
                 case C_CUTIE:  redaCutie(i); break;
+                case C_HUD:    redaHud(i); break;
             }
         }
         nrComenzi = 0;
@@ -358,6 +370,14 @@ public class CapaUI {
     }
 
     public boolean areCutie() { return cutiePiesa != null; }
+
+    /** bara HUD: linia neon trece prin dreptunghiul dat; despartitoarele cad la 1/3 si 2/3 */
+    public void baraHud(float xFrac, float yFrac, float latFrac, float inaltFrac, int culoare) {
+        if (baraHud == null || Color.alpha(culoare) == 0) return;
+        adauga(C_HUD, null, xFrac, yFrac, latFrac, inaltFrac, 0f, culoare, 0, 0);
+    }
+
+    public boolean areBaraHud() { return baraHud != null; }
 
     public float latimeTextFrac(String s, float marime) {
         if (canvas == null || s == null) return 0f;
@@ -537,6 +557,39 @@ public class CapaUI {
         tinta.set(cx - latura / 2f, cy - latura / 2f, cx + latura / 2f, cy + latura / 2f);
         canvas.drawBitmap(b, null, tinta, paintRama);
     }
+
+    private void redaHud(int i) {
+        Bitmap b = baraHud;
+        if (b == null) return;
+        int cul = cCul[i];
+        paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
+        paintRama.setAlpha(Color.alpha(cul));
+
+        float fx = b.getWidth() / HUD_W, fy = b.getHeight() / HUD_H;   // imagine -> pixeli reali
+        float st = cA[i] * latimePx, su = cB[i] * inaltimePx;
+        float lat = cC[i] * latimePx, inalt = cD[i] * inaltimePx;
+        // scara bucatilor fixe, din inaltimea barei
+        float s = 0.7f * inalt / ((HUD_JOS - HUD_SUS) * fy);
+
+        // coloane: colt | intins | despartitor | intins | despartitor | intins | colt
+        int[] sx = {0, r(HUD_CX * fx), r((HUD_D1 - HUD_K) * fx), r((HUD_D1 + HUD_K) * fx),
+                    r((HUD_D2 - HUD_K) * fx), r((HUD_D2 + HUD_K) * fx),
+                    r((HUD_W - HUD_CX) * fx), b.getWidth()};
+        float c1 = st + lat / 3f, c2 = st + 2f * lat / 3f, k = HUD_K * fx * s;
+        float x0 = st - HUD_ST * fx * s, x7 = st + lat + (HUD_W - HUD_DR) * fx * s;
+        float[] dx = {x0, x0 + HUD_CX * fx * s, c1 - k, c1 + k, c2 - k, c2 + k,
+                      x7 - HUD_CX * fx * s, x7};
+        // randuri: sus fix | mijloc intins | jos fix
+        int[] sy = {0, r(HUD_CY * fy), r((HUD_H - HUD_CY) * fy), b.getHeight()};
+        float y0 = su - HUD_SUS * fy * s, y3 = su + inalt + (HUD_H - HUD_JOS) * fy * s;
+        float[] dy = {y0, y0 + HUD_CY * fy * s, y3 - HUD_CY * fy * s, y3};
+
+        for (int rr = 0; rr < 3; rr++)
+            for (int cc = 0; cc < 7; cc++)
+                bucata(b, sx[cc], sy[rr], sx[cc + 1], sy[rr + 1], dx[cc], dy[rr], dx[cc + 1], dy[rr + 1]);
+    }
+
+    private static int r(float v) { return Math.round(v); }
 
     private void bucata(Bitmap b, int sx0, int sy0, int sx1, int sy1,
                         float dx0, float dy0, float dx1, float dy1) {

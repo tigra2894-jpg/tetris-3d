@@ -571,6 +571,12 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
 
         // rand HUD sub tabla
         float yHud = ecranY(-1.1f);
+        boolean areBara = ui.areBaraHud();
+        if (areBara) {
+            // bara coboara putin ca sa nu atinga baza tablei
+            yHud += 0.018f;
+            ui.baraHud(0.005f, yHud - 0.027f, 0.99f, 0.080f, argb(fade * 0.7f, 0x4DE1FF));
+        }
         float yHud2 = yHud + 0.030f;
         ui.textCentrat("SCOR", 0.17f, yHud, 0.018f, argb(fade * 0.7f, 0xB9C2D6));
         ui.textCentrat(String.valueOf(scorAfisat), 0.17f, yHud2, 0.030f, argb(fade, 0xFFFFFF));
@@ -599,7 +605,9 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
                 ui.textCentrat(joc.linii + "", 0.83f, yHud2, 0.030f, argb(fade, 0xFFFFFF));
                 if (joc.mod == Setari.MOD_CLASIC) {
                     float prog = (joc.linii % 10) / 10f;
-                    ui.bara(0.12f, yHud2 + 0.014f, 0.76f, 0.006f, prog, argb(fade * 0.4f, 0x2A3350), argb(fade, 0x4DE1FF));
+                    // cu bara HUD, progresul spre nivelul urmator sta in compartimentul NIVEL
+                    if (areBara) ui.bara(0.39f, yHud2 + 0.010f, 0.22f, 0.006f, prog, argb(fade * 0.4f, 0x2A3350), argb(fade, 0x4DE1FF));
+                    else ui.bara(0.12f, yHud2 + 0.014f, 0.76f, 0.006f, prog, argb(fade * 0.4f, 0x2A3350), argb(fade, 0x4DE1FF));
                 }
             }
         }
