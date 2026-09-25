@@ -565,8 +565,12 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         ui.text(Setari.NUME_MODURI[joc.mod], 0.03f, 0.045f, 0.022f, argb(fade * 0.9f, 0x4DE1FF));
         if (stare == STARE_JOC || stare == STARE_START) {
             ui.panou(0.885f, 0.018f, 0.09f, 0.048f, argb(fade * 0.55f, 0x0B1020), 0.012f);
-            ui.panou(0.912f, 0.028f, 0.012f, 0.028f, argb(fade, 0xFFFFFF), 0.003f);
-            ui.panou(0.936f, 0.028f, 0.012f, 0.028f, argb(fade, 0xFFFFFF), 0.003f);
+            if (app.iconitaPauza != null) {
+                ui.iconita(app.iconitaPauza, 0.93f, 0.042f, 0.065f, argb(fade, 0xFFFFFF));
+            } else {
+                ui.panou(0.912f, 0.028f, 0.012f, 0.028f, argb(fade, 0xFFFFFF), 0.003f);
+                ui.panou(0.936f, 0.028f, 0.012f, 0.028f, argb(fade, 0xFFFFFF), 0.003f);
+            }
         }
 
         // rand HUD sub tabla
@@ -647,8 +651,14 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
                 ui.panou(x - lat / 2f + 0.008f, Y_BUTOANE + 0.012f, lat - 0.016f, 0.118f, fundal, 0.018f);
                 ui.chenar(x - lat / 2f + 0.008f, Y_BUTOANE + 0.012f, lat - 0.016f, 0.118f, contur, 0.018f, 0.0018f);
                 String et = ETICHETE[i];
-                if (i == B_ROT_L && joc.mod == Setari.MOD_LIBER) et = "\u21C4";
-                ui.textCentrat(et, x, Y_BUTOANE + 0.084f, 0.040f, argb(fade, 0xFFFFFF));
+                boolean liber = i == B_ROT_L && joc.mod == Setari.MOD_LIBER;   // aici butonul schimba forma
+                if (liber) et = "\u21C4";
+                if (!liber && app.iconite[i] != null) {
+                    ui.iconita(app.iconite[i], x, Y_BUTOANE + 0.071f, (lat - 0.016f) * 0.85f,
+                            argb(fade * (0.85f + ap * 0.15f), 0xFFFFFF));
+                } else {
+                    ui.textCentrat(et, x, Y_BUTOANE + 0.084f, 0.040f, argb(fade, 0xFFFFFF));
+                }
             }
         }
 

@@ -25,6 +25,12 @@ public class Aplicatie {
     // texturile GL corespunzatoare (0 daca lipsesc); se recreeaza odata cu contextul GL
     public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0, texRama = 0, texParticula = 0, texStea = 0;
 
+    /** iconitele butoanelor de control, in ordinea butoanelor din EcranJoc; null daca lipsesc */
+    public static final String[] NUME_ICONITE = {"ic_stanga", "ic_dreapta", "ic_rotire_stanga",
+            "ic_rotire_dreapta", "ic_jos", "ic_trantire", "ic_hold"};
+    public final Bitmap[] iconite = new Bitmap[NUME_ICONITE.length];
+    public final Bitmap iconitaPauza;
+
     public float latime = 1f, inaltime = 1f, raport = 0.5f;
     public float timp = 0f;
     public int fps = 0;
@@ -61,6 +67,8 @@ public class Aplicatie {
         imgDialog    = Texturi.citeste(act, "panou_dialog");
         imgCutie     = Texturi.citeste(act, "cutie_piesa");
         imgHud       = Texturi.citeste(act, "bara_hud");
+        for (int i = 0; i < NUME_ICONITE.length; i++) iconite[i] = Texturi.citeste(act, NUME_ICONITE[i]);
+        iconitaPauza = Texturi.citeste(act, "ic_pauza");
         imgLogo   = Texturi.citeste(act, "logo");
         sunet.setPornit(setari.sunetPornit());
         vibratii.setPornit(setari.vibratiePornita());

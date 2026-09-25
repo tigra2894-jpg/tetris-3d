@@ -235,6 +235,7 @@ public class CapaUI {
     private static final int C_DIALOG = 8;
     private static final int C_CUTIE = 9;
     private static final int C_HUD = 10;
+    private static final int C_ICONITA = 11;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -280,6 +281,7 @@ public class CapaUI {
                 case C_DIALOG: redaDialog(i); break;
                 case C_CUTIE:  redaCutie(i); break;
                 case C_HUD:    redaHud(i); break;
+                case C_ICONITA: redaIconita(i); break;
             }
         }
         nrComenzi = 0;
@@ -378,6 +380,13 @@ public class CapaUI {
     }
 
     public boolean areBaraHud() { return baraHud != null; }
+
+    /** iconita alba pe transparent, colorata, centrata in (xFrac, yFrac); latura = laturaFrac din latimea ecranului */
+    public void iconita(Bitmap b, float xFrac, float yFrac, float laturaFrac, int culoare) {
+        if (b == null || Color.alpha(culoare) == 0 || nrComenzi >= MAX_COMENZI) return;
+        adauga(C_ICONITA, null, xFrac, yFrac, laturaFrac, 0f, 0f, culoare, System.identityHashCode(b), 0);
+        cImg[nrComenzi - 1] = b;
+    }
 
     public float latimeTextFrac(String s, float marime) {
         if (canvas == null || s == null) return 0f;
@@ -553,6 +562,18 @@ public class CapaUI {
         paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
         paintRama.setAlpha(Color.alpha(cul));
         float latura = cC[i] * latimePx / (1f - 2f * CUTIE_MARGINE);
+        float cx = cA[i] * latimePx, cy = cB[i] * inaltimePx;
+        tinta.set(cx - latura / 2f, cy - latura / 2f, cx + latura / 2f, cy + latura / 2f);
+        canvas.drawBitmap(b, null, tinta, paintRama);
+    }
+
+    private void redaIconita(int i) {
+        Bitmap b = cImg[i];
+        if (b == null) return;
+        int cul = cCul[i];
+        paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
+        paintRama.setAlpha(Color.alpha(cul));
+        float latura = cC[i] * latimePx;
         float cx = cA[i] * latimePx, cy = cB[i] * inaltimePx;
         tinta.set(cx - latura / 2f, cy - latura / 2f, cx + latura / 2f, cy + latura / 2f);
         canvas.drawBitmap(b, null, tinta, paintRama);
