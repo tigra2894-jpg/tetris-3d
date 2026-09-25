@@ -19,9 +19,9 @@ public class Aplicatie {
     public Imagine imagine;
 
     // imagini optionale din assets/texturi/ (null daca lipsesc)
-    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgLogo;
+    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgRama, imgLogo;
     // texturile GL corespunzatoare (0 daca lipsesc); se recreeaza odata cu contextul GL
-    public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0;
+    public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0, texRama = 0;
 
     public float latime = 1f, inaltime = 1f, raport = 0.5f;
     public float timp = 0f;
@@ -51,6 +51,7 @@ public class Aplicatie {
         imgFundalJoc   = Texturi.citeste(act, "fundal_joc");
         imgFundalMeniu = Texturi.citeste(act, "fundal_meniu");
         imgPanou  = Texturi.citeste(act, "panou");
+        imgRama   = Texturi.citeste(act, "rama");
         imgLogo   = Texturi.citeste(act, "logo");
         sunet.setPornit(setari.sunetPornit());
         vibratii.setPornit(setari.vibratiePornita());
@@ -68,6 +69,7 @@ public class Aplicatie {
         texFundalJoc   = Texturi.incarca(imgFundalJoc);
         texFundalMeniu = Texturi.incarca(imgFundalMeniu);
         texPanou  = Texturi.incarca(imgPanou);
+        texRama   = Texturi.incarca(imgRama, true);
         if (!pornita) {
             pornita = true;
             ecranMeniu = new EcranMeniu(this);

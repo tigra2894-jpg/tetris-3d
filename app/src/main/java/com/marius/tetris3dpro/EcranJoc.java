@@ -380,10 +380,24 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         float g = 0.16f;
         float alfa = 0.85f;
         float h = Joc.RANDURI;
-        // laterale
-        r.cubIntins(-5f - g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
-        r.cubIntins( 5f + g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
-        r.cubIntins(0f, -g / 2f, 0f, 10f + g * 2f, g, 1f, a[0], a[1], a[2], alfa);
+        if (app.texRama != 0) {
+            // rama texturata, mai groasa: corpul e un cub inchis, fata din fata primeste imaginea
+            float gr = 0.5f, fata = 0.51f;
+            float c = 0.06f;
+            r.cubIntins(-5f - gr / 2f, (h - gr) / 2f, 0f, gr, h + gr, 1f, c, c, c * 1.4f, 1f);
+            r.cubIntins( 5f + gr / 2f, (h - gr) / 2f, 0f, gr, h + gr, 1f, c, c, c * 1.4f, 1f);
+            r.cubIntins(0f, -gr / 2f, 0f, 10f, gr, 1f, c, c, c * 1.4f, 1f);
+            // fasia 1:8 pe o latime de gr acopera 8*gr unitati; se repeta pe lungime
+            float rep = (h + gr) / (8f * gr);
+            app.imagine.bara(app.texRama, r.vizProj(), -5f - gr, -gr, -5f, h, fata, rep, false);
+            app.imagine.bara(app.texRama, r.vizProj(), 5f, -gr, 5f + gr, h, fata, rep, false);
+            app.imagine.bara(app.texRama, r.vizProj(), -5f, -gr, 5f, 0f, fata, 10f / (8f * gr), true);
+        } else {
+            // laterale
+            r.cubIntins(-5f - g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
+            r.cubIntins( 5f + g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
+            r.cubIntins(0f, -g / 2f, 0f, 10f + g * 2f, g, 1f, a[0], a[1], a[2], alfa);
+        }
         // perete din spate cu grila; cu imaginea panou.png grila ramane doar ca urma fina
         float grila = 1f;
         if (app.texPanou != 0) {

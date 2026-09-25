@@ -56,6 +56,11 @@ public final class Texturi {
      * Returneaza 0 daca bitmap-ul e null.
      */
     public static int incarca(Bitmap b) {
+        return incarca(b, false);
+    }
+
+    /** repeta = true: textura se poate repeta (GL_REPEAT), doar daca laturile sunt puteri ale lui 2 */
+    public static int incarca(Bitmap b, boolean repeta) {
         if (b == null) return 0;
         int[] id = new int[1];
         GLES20.glGenTextures(1, id, 0);
@@ -65,8 +70,9 @@ public final class Texturi {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
                 pot ? GLES20.GL_LINEAR_MIPMAP_LINEAR : GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        int impachetare = repeta && pot ? GLES20.GL_REPEAT : GLES20.GL_CLAMP_TO_EDGE;
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, impachetare);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, impachetare);
 
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, b, 0);
         if (pot) GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);

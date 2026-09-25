@@ -91,6 +91,28 @@ public class Imagine {
         deseneaza(textura, vizProj, r, g, b, alfa);
     }
 
+    /**
+     * bara texturata in scena 3D; textura (o fasie verticala) se repeta de "repetari" ori
+     * pe lungimea barei. rotita = true pentru bare orizontale (fasia culcata pe o parte).
+     */
+    public void bara(int textura, float[] vizProj, float x0, float y0, float x1, float y1, float z,
+                     float repetari, boolean rotita) {
+        if (textura == 0) return;
+        if (!rotita) {
+            seteaza(x0, y0, x1, y1, z, 0f, 1f, 0f, repetari);
+        } else {
+            // u al texturii merge de jos in sus pe bara, v de la stanga la dreapta
+            float[] d = varfuri;
+            d[0]  = x0; d[1]  = y0; d[2]  = z; d[3]  = 1f; d[4]  = 0f;
+            d[5]  = x1; d[6]  = y0; d[7]  = z; d[8]  = 1f; d[9]  = repetari;
+            d[10] = x0; d[11] = y1; d[12] = z; d[13] = 0f; d[14] = 0f;
+            d[15] = x1; d[16] = y1; d[17] = z; d[18] = 0f; d[19] = repetari;
+            buf.position(0);
+            buf.put(d).position(0);
+        }
+        deseneaza(textura, vizProj, 1f, 1f, 1f, 1f);
+    }
+
     /** colturile: stanga-jos, dreapta-jos, stanga-sus, dreapta-sus; v=0 este sus in imagine */
     private void seteaza(float x0, float y0, float x1, float y1, float z,
                          float u0, float u1, float v0, float v1) {
