@@ -1,9 +1,23 @@
 Imagini optionale pentru joc. Daca un fisier lipseste, jocul foloseste aspectul
 desenat din cod. Numele sunt fixe; extensia poate fi .png, .jpg sau .webp.
 
-  bloc    - fata unui cub (512x512, patrat, nuante de gri; se coloreaza dupa piesa)
-  fundal_joc   - imaginea din spatele tablei in timpul jocului (portret, 1080x1920)
-  fundal_meniu - imaginea din spatele meniurilor (portret, 1080x1920);
-                 daca lipseste, meniurile folosesc fundal_joc
-  panou   - peretele din spatele tablei de joc (portret 1:2, de ex. 512x1024)
-  logo    - titlul din meniu, PNG cu fundal transparent (lat, de ex. 1024x400)
+Joc:
+  bloc          - fata unui cub (patrat, nuante de gri; se coloreaza dupa piesa)
+  fundal_joc    - imaginea din spatele tablei (portret)
+  panou         - peretele din spatele tablei (1:2)
+  rama          - stalpii si baza tablei (fasie verticala, se repeta)
+  podea         - podeaua de sub tabla (patrat, se repeta)
+  particula     - scanteia de la explozii (alb pe negru, adunata peste scena)
+  stea          - stelele din fundal (alb pe negru, adunata peste scena)
+
+Interfata (alb pe transparent; culoarea o pune jocul):
+  fundal_meniu  - fundalul meniurilor (portret); lipsa => fundal_joc
+  logo          - titlul din meniu (color, cu transparenta)
+  buton         - rama butoanelor din meniu (capetele nu se intind)
+  panou_dialog  - chenarul ferestrelor Game Over / Statistici (9 bucati)
+  cutie_piesa   - cutia pentru HOLD / NEXT
+  bara_hud      - bara SCOR / NIVEL / LINII (3 compartimente egale)
+  ic_pauza      - butonul de pauza din coltul dreapta-sus
+  ic_stanga, ic_dreapta, ic_rotire_stanga, ic_rotire_dreapta, ic_jos,
+  ic_trantire, ic_hold - iconitele butoanelor de control (vizibile doar
+                  daca butoanele sunt pornite din SETARI)
