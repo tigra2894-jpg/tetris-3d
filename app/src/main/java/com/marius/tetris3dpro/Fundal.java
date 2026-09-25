@@ -15,6 +15,9 @@ public class Fundal {
     /** podea texturata (assets/texturi/podea.png); setate de Aplicatie la crearea contextului GL */
     public Imagine imagine;
     public int texPodea = 0;
+    /** stele cu textura (assets/texturi/stea.png): lotul si textura, setate de Aplicatie */
+    public Scantei lotStele;
+    public int texStea = 0;
     private final Random rnd = new Random(11);
 
     public Fundal() {
@@ -43,10 +46,19 @@ public class Fundal {
     }
 
     public void deseneazaStele(Randare r, float[] culoareTema) {
+        boolean texturat = texStea != 0 && lotStele != null;
         for (int i = 0; i < NR_STELE; i++) {
             float puls = 0.6f + 0.4f * (float) Math.sin(timp * 2.1f + sf[i]);
             float ad = 1f - Math.min(1f, (-sz[i] - 8f) / 40f);
             float alfa = (0.25f + 0.55f * ad) * puls;
+            if (texturat) {
+                lotStele.adauga(sx[i], sy[i], sz[i], ss[i] * 7f, 0f,
+                        sr[i] * 0.7f + culoareTema[0] * 0.3f,
+                        sg[i] * 0.7f + culoareTema[1] * 0.3f,
+                        sb[i] * 0.7f + culoareTema[2] * 0.3f,
+                        alfa);
+                continue;
+            }
             r.cubRotit(sx[i], sy[i], sz[i], timp * 25f + sf[i] * 57f, 1f, 1f, 0.3f,
                     sr[i] * 0.7f + culoareTema[0] * 0.3f,
                     sg[i] * 0.7f + culoareTema[1] * 0.3f,

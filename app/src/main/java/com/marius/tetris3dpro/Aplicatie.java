@@ -18,11 +18,12 @@ public class Aplicatie {
     public CapaUI ui;
     public Imagine imagine;
     public Scantei scantei;
+    public Scantei stele;
 
     // imagini optionale din assets/texturi/ (null daca lipsesc)
-    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgRama, imgPodea, imgParticula, imgLogo;
+    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgRama, imgPodea, imgParticula, imgStea, imgLogo;
     // texturile GL corespunzatoare (0 daca lipsesc); se recreeaza odata cu contextul GL
-    public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0, texRama = 0, texParticula = 0;
+    public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0, texRama = 0, texParticula = 0, texStea = 0;
 
     public float latime = 1f, inaltime = 1f, raport = 0.5f;
     public float timp = 0f;
@@ -55,6 +56,7 @@ public class Aplicatie {
         imgRama   = Texturi.citeste(act, "rama");
         imgPodea  = Texturi.citeste(act, "podea");
         imgParticula = Texturi.citeste(act, "particula");
+        imgStea      = Texturi.citeste(act, "stea");
         imgLogo   = Texturi.citeste(act, "logo");
         sunet.setPornit(setari.sunetPornit());
         vibratii.setPornit(setari.vibratiePornita());
@@ -69,12 +71,16 @@ public class Aplicatie {
         ui.pregatesteGL();
         imagine = new Imagine();
         scantei = new Scantei();
+        stele = new Scantei();
         randare.seteazaTexturaBloc(Texturi.incarca(imgBloc));
         texFundalJoc   = Texturi.incarca(imgFundalJoc);
         texFundalMeniu = Texturi.incarca(imgFundalMeniu);
         texPanou  = Texturi.incarca(imgPanou);
         texRama   = Texturi.incarca(imgRama, true);
         texParticula = Texturi.incarca(imgParticula);
+        texStea      = Texturi.incarca(imgStea);
+        fundal.lotStele = stele;
+        fundal.texStea  = texStea;
         fundal.imagine  = imagine;
         fundal.texPodea = Texturi.incarca(imgPodea, true);
         if (!pornita) {
@@ -137,6 +143,7 @@ public class Aplicatie {
         }
         ecranCurent.deseneaza3D(randare);
         randare.goleste();
+        stele.goleste(texStea, randare.vizProj());
         scantei.goleste(texParticula, randare.vizProj());
 
         ui.inceputCadru();
