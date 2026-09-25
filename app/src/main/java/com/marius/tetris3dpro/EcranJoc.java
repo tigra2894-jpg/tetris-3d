@@ -384,12 +384,18 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         r.cubIntins(-5f - g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
         r.cubIntins( 5f + g / 2f, h / 2f, 0f, g, h + g, 1f, a[0], a[1], a[2], alfa);
         r.cubIntins(0f, -g / 2f, 0f, 10f + g * 2f, g, 1f, a[0], a[1], a[2], alfa);
-        // perete din spate cu grila
-        r.cubIntins(0f, h / 2f, -0.75f, 10f, h, 0.06f, 0.02f, 0.03f, 0.07f, 0.92f);
+        // perete din spate cu grila; cu imaginea panou.png grila ramane doar ca urma fina
+        float grila = 1f;
+        if (app.texPanou != 0) {
+            app.imagine.panou(app.texPanou, r.vizProj(), -5f, 0f, 5f, h, -0.72f, 1f, 1f, 1f, 1f);
+            grila = 0.4f;
+        } else {
+            r.cubIntins(0f, h / 2f, -0.75f, 10f, h, 0.06f, 0.02f, 0.03f, 0.07f, 0.92f);
+        }
         for (int c = 1; c < Joc.COLOANE; c++)
-            r.cubIntins(c - 5f, h / 2f, -0.70f, 0.03f, h, 0.02f, a[0], a[1], a[2], 0.12f);
+            r.cubIntins(c - 5f, h / 2f, -0.70f, 0.03f, h, 0.02f, a[0], a[1], a[2], 0.12f * grila);
         for (int row = 1; row < Joc.RANDURI; row++)
-            r.cubIntins(0f, row, -0.70f, 10f, 0.03f, 0.02f, a[0], a[1], a[2], 0.10f);
+            r.cubIntins(0f, row, -0.70f, 10f, 0.03f, 0.02f, a[0], a[1], a[2], 0.10f * grila);
         // linie de pericol
         r.cubIntins(0f, Joc.RANDURI - 2f, -0.68f, 10f, 0.05f, 0.02f, 1f, 0.3f, 0.3f, 0.18f);
     }

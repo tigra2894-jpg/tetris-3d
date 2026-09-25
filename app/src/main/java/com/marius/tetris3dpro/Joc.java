@@ -364,7 +364,7 @@ public class Joc {
             int[][] cx = {{-1, 1}, {1, 1}, {1, -1}, {-1, -1}};
             for (int i = 0; i < 4; i++) {
                 int x = pieseX + cx[i][0], y = pieseY + cx[i][1];
-                boolean plin = x < 0 || x >= COLOANE || y < 0 || tabla[y][x] != 0;
+                boolean plin = x < 0 || x >= COLOANE || y < 0 || y >= RANDURI_TOTAL || tabla[y][x] != 0;
                 if (plin) {
                     colturi++;
                     if (esteColtFata(cx[i][0], cx[i][1])) colturiFata++;

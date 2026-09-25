@@ -123,6 +123,9 @@ public class CapaUI {
     /** incepe inregistrarea comenzilor pentru un cadru nou */
     public void inceputCadru() {
         semnatura.setLength(0);
+        // comenzile se golesc si cand cadrul precedent a fost sarit (identic),
+        // altfel se aduna de la un cadru la altul si se redau suprapuse
+        nrComenzi = 0;
     }
 
     /** deseneaza (daca s-a schimbat ceva) si afiseaza stratul peste scena */
@@ -188,6 +191,7 @@ public class CapaUI {
     private static final int C_CHENAR = 3;
     private static final int C_BARA = 4;
     private static final int C_CERC = 5;
+    private static final int C_IMAGINE = 6;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -200,6 +204,7 @@ public class CapaUI {
     private final int[] cCul = new int[MAX_COMENZI];
     private final int[] cCul2 = new int[MAX_COMENZI];
     private final int[] cAlin = new int[MAX_COMENZI];
+    private final Bitmap[] cImg = new Bitmap[MAX_COMENZI];
     private int nrComenzi = 0;
 
     private void adauga(int tip, String text, float a, float b, float c, float d, float e,
@@ -209,6 +214,7 @@ public class CapaUI {
         cTip[i] = tip; cText[i] = text;
         cA[i] = a; cB[i] = b; cC[i] = c; cD[i] = d; cE[i] = e;
         cCul[i] = cul; cCul2[i] = cul2; cAlin[i] = alin;
+        cImg[i] = null;
 
         semnatura.append(tip).append('|');
         if (text != null) semnatura.append(text);
@@ -226,6 +232,7 @@ public class CapaUI {
                 case C_CHENAR: redaChenar(i); break;
                 case C_BARA:   redaBara(i); break;
                 case C_CERC:   redaCerc(i); break;
+                case C_IMAGINE: redaImagine(i); break;
             }
         }
         nrComenzi = 0;
@@ -280,6 +287,16 @@ public class CapaUI {
         panou(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareFundal, inalt * 0.35f);
         chenar(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareContur, inalt * 0.35f, 0.0025f);
         textCentrat(s, xCentru, yCentru + marimeText * 0.35f, marimeText, culoareText);
+    }
+
+    /**
+     * imagine (de ex. logo) centrata in (xCentru, yCentru), cat mai mare
+     * fara sa depaseasca latMax x inaltMax (fractiuni de ecran), cu proportiile pastrate
+     */
+    public void imagine(Bitmap b, float xCentru, float yCentru, float latMax, float inaltMax, float alfa) {
+        if (b == null || alfa <= 0.002f || nrComenzi >= MAX_COMENZI) return;
+        adauga(C_IMAGINE, null, xCentru, yCentru, latMax, inaltMax, alfa, System.identityHashCode(b), 0, 0);
+        cImg[nrComenzi - 1] = b;
     }
 
     public float latimeTextFrac(String s, float marime) {
@@ -368,6 +385,22 @@ public class CapaUI {
             rect.set(st, su, st + lat * u, su + ina);
             canvas.drawRoundRect(rect, raza, raza, paint);
         }
+    }
+
+    private void redaImagine(int i) {
+        Bitmap b = cImg[i];
+        if (b == null) return;
+        float latMax = cC[i] * latimePx, inaltMax = cD[i] * inaltimePx;
+        float scara = Math.min(latMax / b.getWidth(), inaltMax / b.getHeight());
+        float l = b.getWidth() * scara, h = b.getHeight() * scara;
+        float cx = cA[i] * latimePx, cy = cB[i] * inaltimePx;
+        rect.set(cx - l / 2f, cy - h / 2f, cx + l / 2f, cy + h / 2f);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.WHITE);
+        paint.setAlpha(Math.max(0, Math.min(255, Math.round(cE[i] * 255f))));
+        paint.setFilterBitmap(true);
+        canvas.drawBitmap(b, null, rect, paint);
+        paint.setAlpha(255);
     }
 
     private void redaCerc(int i) {

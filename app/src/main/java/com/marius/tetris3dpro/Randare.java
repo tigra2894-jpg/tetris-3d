@@ -40,6 +40,8 @@ public class Randare {
             "varying vec3 vNormal;\n" +
             "varying vec2 vUV;\n" +
             "varying vec4 vCuloare;\n" +
+            "uniform sampler2D uTex;\n" +
+            "uniform float uAreTex;\n" +
             "const vec3 L  = normalize(vec3(0.35, 0.82, 0.45));\n" +
             "const vec3 V  = vec3(0.0, 0.0, 1.0);\n" +
             "const vec3 NEON_A = normalize(vec3(-0.85, 0.15, 0.50));\n" +
@@ -50,7 +52,9 @@ public class Randare {
             "  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);\n" +
             "}\n" +
             "void main() {\n" +
-            "  vec2 d = abs(vUV - 0.5) * 2.0;\n" +
+            "  bool plat = vUV.x < -0.5;\n" +
+            "  vec2 d = plat ? vec2(0.0) : abs(vUV - 0.5) * 2.0;\n" +
+            "  float tx = plat ? 0.0 : uAreTex;\n" +
             "  float colt = length(max(d - 0.52, 0.0)) / 0.48;\n" +
             "  if (colt > 1.0) discard;\n" +
             "  float rotunjire = 1.0 - smoothstep(0.86, 1.0, colt);\n" +
@@ -61,7 +65,8 @@ public class Randare {
             "  float fata = max(N.z, 0.0);\n" +
             "  float lat  = abs(N.x);\n" +
             "  float jos  = max(-N.y, 0.0);\n" +
-            "  vec3 baza = vCuloare.rgb;\n" +
+            "  vec3 detaliu = texture2D(uTex, clamp(vec2(vUV.x, 1.0 - vUV.y), 0.0, 1.0)).rgb;\n" +
+            "  vec3 baza = vCuloare.rgb * mix(vec3(1.0), detaliu * 1.8, tx);\n" +
             "  float nivel = 0.34 + sus * 0.78 + fata * 0.42 + lat * 0.16 - jos * 0.10 + dif * 0.22;\n" +
             "  vec3 culoare = baza * nivel;\n" +
             "  float refA = pow(max(dot(N, NEON_A), 0.0), 2.2);\n" +
@@ -74,9 +79,9 @@ public class Randare {
             "  culoare += vec3(1.0) * sclip * (0.20 + sus * 0.40);\n" +
             "  float contur = smoothstep(0.55, 0.98, colt);\n" +
             "  vec3 culContur = baza * 1.5 + vec3(0.28);\n" +
-            "  culoare = mix(culoare, culContur, contur * 0.55);\n" +
+            "  culoare = mix(culoare, culContur, contur * 0.55 * (1.0 - tx));\n" +
             "  float t = zgomot(floor(vUV * 42.0));\n" +
-            "  culoare *= 0.965 + t * 0.070;\n" +
+            "  culoare *= mix(0.965 + t * 0.070, 1.0, tx);\n" +
             "  gl_FragColor = vec4(culoare, vCuloare.a * rotunjire);\n" +
             "}\n";
 
@@ -123,7 +128,10 @@ public class Randare {
     private final int ibo;
 
     private final int program;
-    private final int locPos, locNormal, locUV, locCuloare, locVP;
+    private final int locPos, locNormal, locUV, locCuloare, locVP, locTex, locAreTex;
+
+    /** textura optionala pentru fetele cuburilor (assets/texturi/bloc.png); 0 = fara */
+    private int texturaBloc = 0;
 
     private final float[] proiectie = new float[16];
     private final float[] camera    = new float[16];
@@ -184,6 +192,8 @@ public class Randare {
         locUV      = GLES20.glGetAttribLocation(program, "aUV");
         locCuloare = GLES20.glGetAttribLocation(program, "aCuloare");
         locVP      = GLES20.glGetUniformLocation(program, "uVP");
+        locTex     = GLES20.glGetUniformLocation(program, "uTex");
+        locAreTex  = GLES20.glGetUniformLocation(program, "uAreTex");
 
         Matrix.setIdentityM(vizProj, 0);
     }
@@ -209,6 +219,10 @@ public class Randare {
         Matrix.setLookAtM(camera, 0, ochiX, ochiY, ochiZ, tintaX, tintaY, tintaZ, 0f, 1f, 0f);
         Matrix.multiplyMM(vizProj, 0, proiectie, 0, camera, 0);
     }
+
+    public float[] vizProj() { return vizProj; }
+
+    public void seteazaTexturaBloc(int textura) { texturaBloc = textura; }
 
     public float inaltimeLaZ(float z) {
         float dist = camEyeZ - z;
@@ -236,7 +250,7 @@ public class Randare {
         int n = opac ? nrOpac : nrTransp;
         if (n >= MAX_CUBURI) { goleste(); n = 0; date = opac ? dateOpac : dateTransp; }
 
-        // cuburile intinse (pereti, grila) primesc UV constant => fara colturi rotunjite
+        // cuburile intinse (pereti, grila) primesc UV -1 => fara colturi rotunjite si fara textura
         boolean plat = sx != sy || sy != sz;
         int k = n * VARFURI_PER_CUB * FLOATURI_PER_VARF;
         for (int v = 0; v < VARFURI_PER_CUB; v++) {
@@ -247,8 +261,8 @@ public class Randare {
             date[k++] = CUB[s + 3];
             date[k++] = CUB[s + 4];
             date[k++] = CUB[s + 5];
-            date[k++] = plat ? 0.5f : CUB[s + 6];
-            date[k++] = plat ? 0.5f : CUB[s + 7];
+            date[k++] = plat ? -1f : CUB[s + 6];
+            date[k++] = plat ? -1f : CUB[s + 7];
             date[k++] = r; date[k++] = g; date[k++] = b; date[k++] = alfa;
         }
         if (opac) nrOpac = n + 1; else nrTransp = n + 1;
@@ -302,6 +316,10 @@ public class Randare {
 
         GLES20.glUseProgram(program);
         GLES20.glUniformMatrix4fv(locVP, 1, false, vizProj, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturaBloc);
+        GLES20.glUniform1i(locTex, 0);
+        GLES20.glUniform1f(locAreTex, texturaBloc != 0 ? 1f : 0f);
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo);
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ibo);

@@ -18,7 +18,7 @@ public class EcranStatistici extends EcranMeniuBaza {
         super.actualizeaza(dt);
         if (tineApasat >= 0f) {
             tineApasat += dt;
-            if (tineApasat > 1.6f && !sters) {
+            if (tineApasat > 2f && !sters) {
                 app.setari.stergeStatistici();
                 app.setari.stergeRecorduri();
                 sters = true;
@@ -57,7 +57,7 @@ public class EcranStatistici extends EcranMeniuBaza {
         rand(ui, "RECORD ULTRA", s.record(Setari.MOD_ULTRA) + "", y, fade, GALBEN);
 
         if (tineApasat >= 0f && !sters) {
-            float p = Math.min(1f, tineApasat / 1.6f);
+            float p = Math.min(1f, tineApasat / 2f);
             ui.bara(0.2f, 0.815f, 0.6f, 0.012f, p, argb(fade * 0.4f, FUNDAL_BTN), argb(fade, ROSU));
             ui.textFin("TINE APASAT PENTRU STERGERE", 0.5f, 0.85f, 0.015f, argb(fade * 0.8f, ROSU));
         } else if (mesajSters > 0f) {

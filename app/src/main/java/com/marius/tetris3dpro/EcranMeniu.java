@@ -28,8 +28,12 @@ public class EcranMeniu extends EcranMeniuBaza {
     @Override
     public void deseneazaUI(CapaUI ui) {
         float fade = tranzitie;
-        ui.textCentrat("TETRIS", 0.5f, 0.31f, 0.095f, argb(fade, ALB));
-        ui.textCentrat("3D PRO", 0.5f, 0.375f, 0.052f, argb(fade, CIAN));
+        if (app.imgLogo != null) {
+            ui.imagine(app.imgLogo, 0.5f, 0.325f, 0.86f, 0.17f, fade);
+        } else {
+            ui.textCentrat("TETRIS", 0.5f, 0.31f, 0.095f, argb(fade, ALB));
+            ui.textCentrat("3D PRO", 0.5f, 0.375f, 0.052f, argb(fade, CIAN));
+        }
 
         int mod = app.setari.ultimulMod();
         ui.textFin("ULTIMUL MOD: " + Setari.NUME_MODURI[mod], 0.5f, 0.435f, 0.018f, argb(fade * 0.75f, GRI));
