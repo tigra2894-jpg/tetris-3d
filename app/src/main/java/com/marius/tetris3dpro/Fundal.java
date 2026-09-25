@@ -11,6 +11,10 @@ public class Fundal {
     private final float[] sr = new float[NR_STELE], sg = new float[NR_STELE], sb = new float[NR_STELE];
 
     private float timp = 0f;
+
+    /** podea texturata (assets/texturi/podea.png); setate de Aplicatie la crearea contextului GL */
+    public Imagine imagine;
+    public int texPodea = 0;
     private final Random rnd = new Random(11);
 
     public Fundal() {
@@ -53,6 +57,12 @@ public class Fundal {
 
     /** podea perspectiva sub tabla */
     public void deseneazaPodea(Randare r, float yPodea, float[] cul) {
+        if (texPodea != 0 && imagine != null) {
+            // o placa de textura = 6 unitati; se estompeaza intre z=-26 si z=-6
+            imagine.podea(texPodea, r.vizProj(), -24f, 24f, -26f, 8f, yPodea,
+                    48f / 6f, 34f / 6f, 0.75f, 0.9f, -6f);
+            return;
+        }
         for (int i = -7; i <= 7; i++) {
             float x = i * 2.4f;
             float alfa = 0.10f + 0.10f * (1f - Math.abs(i) / 7f);

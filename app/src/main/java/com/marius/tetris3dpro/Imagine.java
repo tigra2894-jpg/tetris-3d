@@ -17,23 +17,30 @@ public class Imagine {
         "uniform mat4 uMVP;\n" +
         "attribute vec3 aPos;\n" +
         "attribute vec2 aUV;\n" +
+        "uniform vec2 uEstompare;\n" +
         "varying vec2 vUV;\n" +
+        "varying float vVizibil;\n" +
         "void main() {\n" +
         "  vUV = aUV;\n" +
+        "  vVizibil = clamp((aPos.z - uEstompare.x) / (uEstompare.y - uEstompare.x), 0.0, 1.0);\n" +
         "  gl_Position = uMVP * vec4(aPos, 1.0);\n" +
         "}\n";
 
     private static final String FS =
         "precision mediump float;\n" +
         "varying vec2 vUV;\n" +
+        "varying float vVizibil;\n" +
         "uniform sampler2D uTex;\n" +
         "uniform vec4 uCuloare;\n" +
         "void main() {\n" +
-        "  gl_FragColor = texture2D(uTex, vUV) * uCuloare;\n" +
+        "  vec4 c = texture2D(uTex, vUV) * uCuloare;\n" +
+        "  gl_FragColor = vec4(c.rgb, c.a * vVizibil);\n" +
         "}\n";
 
     private final int program;
-    private final int locPos, locUV, locMVP, locTex, locCuloare;
+    private final int locPos, locUV, locMVP, locTex, locCuloare, locEstompare;
+    // intre z = estompareDeparte (invizibil) si z = estompareAproape (vizibil complet)
+    private float estompareDeparte = -2000f, estompareAproape = -1999f;
     private final float[] varfuri = new float[20];   // 4 x (x y z u v)
     private final FloatBuffer buf;
     private final float[] identitate = new float[16];
@@ -48,6 +55,7 @@ public class Imagine {
         locMVP     = GLES20.glGetUniformLocation(program, "uMVP");
         locTex     = GLES20.glGetUniformLocation(program, "uTex");
         locCuloare = GLES20.glGetUniformLocation(program, "uCuloare");
+        locEstompare = GLES20.glGetUniformLocation(program, "uEstompare");
 
         ByteBuffer bb = ByteBuffer.allocateDirect(varfuri.length * 4);
         bb.order(ByteOrder.nativeOrder());
@@ -113,6 +121,25 @@ public class Imagine {
         deseneaza(textura, vizProj, 1f, 1f, 1f, 1f);
     }
 
+    /**
+     * podea orizontala la inaltimea y, intre x0..x1 si z0 (departe) .. z1 (aproape);
+     * textura se repeta de repX x repZ ori si se estompeaza spre departe
+     */
+    public void podea(int textura, float[] vizProj, float x0, float x1, float z0, float z1, float y,
+                      float repX, float repZ, float luminozitate, float alfa, float zVizibil) {
+        if (textura == 0) return;
+        float[] d = varfuri;
+        d[0]  = x0; d[1]  = y; d[2]  = z1; d[3]  = 0f;   d[4]  = repZ;
+        d[5]  = x1; d[6]  = y; d[7]  = z1; d[8]  = repX; d[9]  = repZ;
+        d[10] = x0; d[11] = y; d[12] = z0; d[13] = 0f;   d[14] = 0f;
+        d[15] = x1; d[16] = y; d[17] = z0; d[18] = repX; d[19] = 0f;
+        buf.position(0);
+        buf.put(d).position(0);
+        estompareDeparte = z0; estompareAproape = zVizibil;
+        deseneaza(textura, vizProj, luminozitate, luminozitate, luminozitate, alfa);
+        estompareDeparte = -2000f; estompareAproape = -1999f;
+    }
+
     /** colturile: stanga-jos, dreapta-jos, stanga-sus, dreapta-sus; v=0 este sus in imagine */
     private void seteaza(float x0, float y0, float x1, float y1, float z,
                          float u0, float u1, float v0, float v1) {
@@ -130,6 +157,7 @@ public class Imagine {
         GLES20.glDisable(GLES20.GL_CULL_FACE);
         GLES20.glUniformMatrix4fv(locMVP, 1, false, mvp, 0);
         GLES20.glUniform4f(locCuloare, r, g, b, a);
+        GLES20.glUniform2f(locEstompare, estompareDeparte, estompareAproape);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textura);
