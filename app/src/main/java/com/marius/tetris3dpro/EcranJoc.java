@@ -26,8 +26,15 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         "TRAGE STANGA / DREAPTA = MUTA",
         "ATINGE STANGA / DREAPTA = ROTESTE",
         "TRAGE IN JOS = COBOARA",
-        "AZVARLE IN JOS = TRANTESTE",
-        "AZVARLE IN SUS / 2 DEGETE = HOLD"
+        "AZVARLE IN SUS SAU IN JOS = TRANTESTE",
+        "ATINGE CU 2 DEGETE = HOLD"
+    };
+    private static final String[] GESTURI_LIBER = {
+        "TRAGE STANGA / DREAPTA = MUTA",
+        "ATINGE = SCHIMBA PIESA (TOATE 7)",
+        "ATINGE CU 2 DEGETE = ROTESTE",
+        "TRAGE IN JOS = COBOARA",
+        "AZVARLE IN SUS SAU IN JOS = TRANTESTE"
     };
     private float timpFinal = 0f;
 
@@ -334,18 +341,24 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
 
         if (gestSoft) { gestSoft = false; joc.setCoborareRapida(false); }
 
-        if (doiDegete) { doiDegete = false; joc.hold(); return; }
+        // 2 degete: hold; in modul liber (fara hold) roteste
+        if (doiDegete) {
+            doiDegete = false;
+            if (joc.mod == Setari.MOD_LIBER) joc.roteste(1); else joc.hold();
+            return;
+        }
 
         if (dy > 0.10f && durata < 0.28f && Math.abs(dx) < 0.08f) {
             joc.trantesteJos();
             return;
         }
+        // azvarlit in sus: trantire, ca in versiunea originala (inainte era hold si piesa "disparea")
         if (dy < -cellH * 1.5f && Math.abs(dx) < 0.1f) {
-            joc.hold();
+            joc.trantesteJos();
             return;
         }
         if (!gestMutat && durata < 0.3f && Math.abs(dx) < 0.03f && Math.abs(dy) < 0.03f) {
-            if (joc.mod == Setari.MOD_LIBER && x < 0.5f) joc.schimbaForma();
+            if (joc.mod == Setari.MOD_LIBER) joc.schimbaForma();
             else joc.roteste(x < 0.5f ? -1 : 1);
         }
     }
@@ -698,9 +711,10 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
     }
 
     private void deseneazaGesturi(CapaUI ui, float y, float a) {
-        ui.panou(0.08f, y - 0.03f, 0.84f, 0.035f * GESTURI.length + 0.025f, argb(a * 0.6f, 0x0B1020), 0.015f);
-        for (int i = 0; i < GESTURI.length; i++)
-            ui.textFin(GESTURI[i], 0.5f, y + i * 0.035f, 0.019f, argb(a * 0.9f, 0xB9C2D6));
+        String[] g = joc.mod == Setari.MOD_LIBER ? GESTURI_LIBER : GESTURI;
+        ui.panou(0.08f, y - 0.03f, 0.84f, 0.035f * g.length + 0.025f, argb(a * 0.6f, 0x0B1020), 0.015f);
+        for (int i = 0; i < g.length; i++)
+            ui.textFin(g[i], 0.5f, y + i * 0.035f, 0.019f, argb(a * 0.9f, 0xB9C2D6));
     }
 
     private void buton(CapaUI ui, String text, float yc, int fundal, int contur) {

@@ -38,7 +38,7 @@ public class EcranSetari extends EcranMeniuBaza {
         for (int i = 0; i < cul.length; i++) {
             ui.cerc(0.5f - 0.09f + i * 0.03f, y, 0.006f, culoare(cul[i], fade));
         }
-        ui.textFin("GESTURI: TRAGE = MUTA, TAP = ROTESTE, FLICK JOS = TRANTESTE, SUS = HOLD",
+        ui.textFin("GESTURI: TRAGE = MUTA, TAP = ROTESTE, AZVARLE SUS/JOS = TRANTESTE, 2 DEGETE = HOLD",
                 0.5f, 0.955f, 0.012f, argb(fade * 0.6f, GRI));
     }
 

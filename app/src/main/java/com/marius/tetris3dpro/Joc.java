@@ -305,19 +305,39 @@ public class Joc {
         return true;
     }
 
-    /** modul liber: schimba tipul piesei care cade */
+    /**
+     * modul liber: la fiecare atingere piesa care cade trece la urmatoarea forma, pe rand prin
+     * toate cele 7 (ca in versiunea originala): I culcat -> I in picioare -> O -> T -> S -> Z -> J -> L -> I...
+     * Daca forma noua nu incape pe loc, se cauta un loc liber lateral, apoi mai sus; daca nu
+     * incape nicaieri, se trece la forma urmatoare, ca schimbarea sa nu se blocheze.
+     */
     public boolean schimbaForma() {
         if (!piesaActiva || terminat || mod != Setari.MOD_LIBER) return false;
-        for (int i = 1; i < NR_PIESE; i++) {
-            int t = (tipCurent + i) % NR_PIESE;
-            for (int r = 0; r < 4; r++) {
-                int rot = (rotatie + r) % 4;
-                if (incape(t, rot, pieseX, pieseY)) {
-                    tipCurent = t; rotatie = rot;
-                    reseteazaLock();
-                    if (ascultator != null) ascultator.laRotire(true);
-                    return true;
-                }
+        int t = tipCurent, r = rotatie;
+        for (int incercare = 0; incercare < NR_PIESE + 1; incercare++) {
+            if (t == P_I && r == 0) { r = 1; }
+            else { t = (t + 1) % NR_PIESE; r = 0; }
+            if (aseazaUndeIncape(t, r)) {
+                tipCurent = t; rotatie = r;
+                ultimaMiscareRotire = false;
+                reseteazaLock();
+                if (ascultator != null) ascultator.laRotire(true);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** cauta pozitia cea mai apropiata unde incape forma (lateral, apoi in sus) si muta piesa acolo */
+    private boolean aseazaUndeIncape(int tip, int rot) {
+        for (int dx = 0; dx <= COLOANE; dx++) {
+            if (incape(tip, rot, pieseX + dx, pieseY)) { pieseX += dx; return true; }
+            if (dx > 0 && incape(tip, rot, pieseX - dx, pieseY)) { pieseX -= dx; return true; }
+        }
+        for (int dy = 1; pieseY + dy < RANDURI_TOTAL; dy++) {
+            for (int dx = 0; dx <= COLOANE; dx++) {
+                if (incape(tip, rot, pieseX + dx, pieseY + dy)) { pieseX += dx; pieseY += dy; return true; }
+                if (dx > 0 && incape(tip, rot, pieseX - dx, pieseY + dy)) { pieseX -= dx; pieseY += dy; return true; }
             }
         }
         return false;
