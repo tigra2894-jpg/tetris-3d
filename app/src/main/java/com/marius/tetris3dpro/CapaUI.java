@@ -3,7 +3,9 @@ package com.marius.tetris3dpro;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LightingColorFilter;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.opengl.GLES20;
@@ -34,6 +36,17 @@ public class CapaUI {
     private final Typeface fontGros = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
     private final Typeface fontNormal = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
     private final RectF rect = new RectF();
+
+    /**
+     * rama butoanelor (assets/texturi/buton.png): alb pe transparent, colorata la desenare.
+     * Capetele (cu detaliile din colturi) nu se intind, doar mijlocul se lungeste.
+     */
+    public Bitmap ramaButon;
+    private static final float RAMA_CAP = 0.15f;       // latimea unui capat, din latimea imaginii
+    private static final float RAMA_MARGINE_X = 0.0155f; // de la marginea imaginii la linia neon
+    private static final float RAMA_MARGINE_Y = 0.072f;
+    private final Paint paintRama = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
+    private final Rect sursa = new Rect();
 
     private int textura = -1;
     private int program;
@@ -192,6 +205,7 @@ public class CapaUI {
     private static final int C_BARA = 4;
     private static final int C_CERC = 5;
     private static final int C_IMAGINE = 6;
+    private static final int C_RAMA = 7;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -233,6 +247,7 @@ public class CapaUI {
                 case C_BARA:   redaBara(i); break;
                 case C_CERC:   redaCerc(i); break;
                 case C_IMAGINE: redaImagine(i); break;
+                case C_RAMA:   redaRama(i); break;
             }
         }
         nrComenzi = 0;
@@ -284,8 +299,13 @@ public class CapaUI {
     /** buton rotunjit cu text centrat */
     public void buton(String s, float xCentru, float yCentru, float lat, float inalt,
                       int culoareFundal, int culoareContur, int culoareText, float marimeText) {
-        panou(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareFundal, inalt * 0.35f);
-        chenar(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareContur, inalt * 0.35f, 0.0025f);
+        if (ramaButon != null) {
+            panou(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareFundal, inalt * 0.2f);
+            adauga(C_RAMA, null, xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, 0f, culoareContur, 0, 0);
+        } else {
+            panou(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareFundal, inalt * 0.35f);
+            chenar(xCentru - lat / 2f, yCentru - inalt / 2f, lat, inalt, culoareContur, inalt * 0.35f, 0.0025f);
+        }
         textCentrat(s, xCentru, yCentru + marimeText * 0.35f, marimeText, culoareText);
     }
 
@@ -401,6 +421,34 @@ public class CapaUI {
         paint.setFilterBitmap(true);
         canvas.drawBitmap(b, null, rect, paint);
         paint.setAlpha(255);
+    }
+
+    private void redaRama(int i) {
+        Bitmap b = ramaButon;
+        if (b == null) return;
+        int cul = cCul[i];
+        paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
+        paintRama.setAlpha(Color.alpha(cul));
+
+        float st = cA[i] * latimePx, su = cB[i] * inaltimePx;
+        float lat = cC[i] * latimePx, inalt = cD[i] * inaltimePx;
+        int bw = b.getWidth(), bh = b.getHeight();
+        // scara verticala: linia neon cade exact pe marginea butonului
+        float s = inalt / (bh * (1f - 2f * RAMA_MARGINE_Y));
+        float mx = bw * RAMA_MARGINE_X * s, my = bh * RAMA_MARGINE_Y * s;
+        float x0 = st - mx, x1 = st + lat + mx, y0 = su - my, y1 = su + inalt + my;
+        int capSrc = Math.round(bw * RAMA_CAP);
+        float cap = Math.min(capSrc * s, (x1 - x0) / 2f);
+
+        sursa.set(0, 0, capSrc, bh);
+        rect.set(x0, y0, x0 + cap, y1);
+        canvas.drawBitmap(b, sursa, rect, paintRama);
+        sursa.set(capSrc, 0, bw - capSrc, bh);
+        rect.set(x0 + cap, y0, x1 - cap, y1);
+        canvas.drawBitmap(b, sursa, rect, paintRama);
+        sursa.set(bw - capSrc, 0, bw, bh);
+        rect.set(x1 - cap, y0, x1, y1);
+        canvas.drawBitmap(b, sursa, rect, paintRama);
     }
 
     private void redaCerc(int i) {

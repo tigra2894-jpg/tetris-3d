@@ -21,7 +21,7 @@ public class Aplicatie {
     public Scantei stele;
 
     // imagini optionale din assets/texturi/ (null daca lipsesc)
-    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgRama, imgPodea, imgParticula, imgStea, imgLogo;
+    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgRama, imgPodea, imgParticula, imgStea, imgButon, imgLogo;
     // texturile GL corespunzatoare (0 daca lipsesc); se recreeaza odata cu contextul GL
     public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0, texRama = 0, texParticula = 0, texStea = 0;
 
@@ -57,6 +57,7 @@ public class Aplicatie {
         imgPodea  = Texturi.citeste(act, "podea");
         imgParticula = Texturi.citeste(act, "particula");
         imgStea      = Texturi.citeste(act, "stea");
+        imgButon     = Texturi.citeste(act, "buton");
         imgLogo   = Texturi.citeste(act, "logo");
         sunet.setPornit(setari.sunetPornit());
         vibratii.setPornit(setari.vibratiePornita());
@@ -69,6 +70,7 @@ public class Aplicatie {
         randare = new Randare();
         ui = new CapaUI();
         ui.pregatesteGL();
+        ui.ramaButon = imgButon;
         imagine = new Imagine();
         scantei = new Scantei();
         stele = new Scantei();
