@@ -3,20 +3,27 @@ plugins {
 }
 
 android {
-    namespace 'com.marius.tetris3d'
+    namespace 'com.marius.tetris3dpro'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.marius.tetris3d"
+        applicationId "com.marius.tetris3dpro"
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "2.0"
     }
 
     buildTypes {
         debug {
             minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // semnat cu cheia de debug ca APK-ul sa se poata instala direct
+            signingConfig signingConfigs.debug
         }
     }
 

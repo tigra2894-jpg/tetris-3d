@@ -2,8 +2,12 @@ name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'devin/**' ]
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,18 +28,32 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Genereaza gradlew
-        run: gradle wrapper --gradle-version 8.9
+      - name: Construieste APK-urile
+        run: ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
 
-      - name: Setează drepturi gradlew
-        run: chmod +x gradlew
+      - name: Redenumeste APK-urile
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk Tetris3DPro.apk
+          cp app/build/outputs/apk/debug/app-debug.apk Tetris3DPro-debug.apk
 
-      - name: Construieste APK-ul
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
-
-      - name: Urca APK-ul
+      - name: Urca APK-urile ca artefact
         uses: actions/upload-artifact@v4
         with:
-          name: Tetris3D-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Tetris3DPro-apk
+          path: |
+            Tetris3DPro.apk
+            Tetris3DPro-debug.apk
           if-no-files-found: error
+
+      - name: Publica release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.${{ github.run_number }}
+          name: Tetris 3D Pro v2.0.${{ github.run_number }}
+          body: |
+            APK generat automat din commit ${{ github.sha }}.
+            Descarca **Tetris3DPro.apk** si instaleaza-l pe telefon.
+          files: |
+            Tetris3DPro.apk
+            Tetris3DPro-debug.apk
