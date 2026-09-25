@@ -37,8 +37,7 @@ public class EcranStatistici extends EcranMeniuBaza {
         titlu(ui, "STATISTICI", 0.14f, fade);
 
         float y = 0.24f;
-        ui.panou(0.10f, y - 0.03f, 0.80f, 0.57f, argb(fade * 0.55f, 0x0B1020), 0.02f);
-        ui.chenar(0.10f, y - 0.03f, 0.80f, 0.57f, argb(fade * 0.5f, CIAN), 0.02f, 0.0015f);
+        ui.fereastra(0.10f, y - 0.03f, 0.80f, 0.57f, argb(fade * 0.55f, 0x0B1020), argb(fade * 0.5f, CIAN));
 
         float pas = 0.046f;
         rand(ui, "JOCURI JUCATE", s.jocuriJucate() + "", y, fade, ALB); y += pas;

@@ -45,6 +45,18 @@ public class CapaUI {
     private static final float RAMA_CAP = 0.15f;       // latimea unui capat, din latimea imaginii
     private static final float RAMA_MARGINE_X = 0.0155f; // de la marginea imaginii la linia neon
     private static final float RAMA_MARGINE_Y = 0.072f;
+    /**
+     * chenarul ferestrelor de dialog (assets/texturi/panou_dialog.png), alb pe transparent.
+     * Colturile si banda din mijlocul laturii de sus raman fixe, laturile se intind.
+     * Valorile sunt fractiuni din imagine, masurate pe imaginea primita.
+     */
+    public Bitmap ramaDialog;
+    private static final float DLG_ST = 34f / 864f, DLG_DR = 34f / 864f;   // pana la linia neon
+    private static final float DLG_SUS = 54f / 884f, DLG_JOS = 34f / 884f;
+    private static final float DLG_COLT_X = 190f / 864f, DLG_COLT_Y = 190f / 884f;
+    private static final float DLG_BANDA_ST = 350f / 864f, DLG_BANDA_DR = 513f / 864f;
+    private final RectF tinta = new RectF();
+
     private final Paint paintRama = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
     private final Rect sursa = new Rect();
 
@@ -206,6 +218,7 @@ public class CapaUI {
     private static final int C_CERC = 5;
     private static final int C_IMAGINE = 6;
     private static final int C_RAMA = 7;
+    private static final int C_DIALOG = 8;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -248,6 +261,7 @@ public class CapaUI {
                 case C_CERC:   redaCerc(i); break;
                 case C_IMAGINE: redaImagine(i); break;
                 case C_RAMA:   redaRama(i); break;
+                case C_DIALOG: redaDialog(i); break;
             }
         }
         nrComenzi = 0;
@@ -317,6 +331,18 @@ public class CapaUI {
         if (b == null || alfa <= 0.002f || nrComenzi >= MAX_COMENZI) return;
         adauga(C_IMAGINE, null, xCentru, yCentru, latMax, inaltMax, alfa, System.identityHashCode(b), 0, 0);
         cImg[nrComenzi - 1] = b;
+    }
+
+    /** fereastra de dialog: fundal inchis + chenar (imaginea panou_dialog sau un chenar simplu) */
+    public void fereastra(float xFrac, float yFrac, float latFrac, float inaltFrac,
+                          int culoareFundal, int culoareContur) {
+        if (ramaDialog != null) {
+            panou(xFrac, yFrac, latFrac, inaltFrac, culoareFundal, 0.012f);
+            adauga(C_DIALOG, null, xFrac, yFrac, latFrac, inaltFrac, 0f, culoareContur, 0, 0);
+        } else {
+            panou(xFrac, yFrac, latFrac, inaltFrac, culoareFundal, 0.02f);
+            chenar(xFrac, yFrac, latFrac, inaltFrac, culoareContur, 0.02f, 0.0018f);
+        }
     }
 
     public float latimeTextFrac(String s, float marime) {
@@ -449,6 +475,49 @@ public class CapaUI {
         sursa.set(bw - capSrc, 0, bw, bh);
         rect.set(x1 - cap, y0, x1, y1);
         canvas.drawBitmap(b, sursa, rect, paintRama);
+    }
+
+    private void redaDialog(int i) {
+        Bitmap b = ramaDialog;
+        if (b == null) return;
+        int cul = cCul[i];
+        paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
+        paintRama.setAlpha(Color.alpha(cul));
+
+        float st = cA[i] * latimePx, su = cB[i] * inaltimePx;
+        float lat = cC[i] * latimePx, inalt = cD[i] * inaltimePx;
+        int bw = b.getWidth(), bh = b.getHeight();
+        // scara: colturile ocupa cam 17% din latura mai mica a ferestrei
+        float s = 0.6f * Math.min(lat, inalt) / (bw * (1f - DLG_ST - DLG_DR));
+        float x0 = st - bw * DLG_ST * s, x1 = st + lat + bw * DLG_DR * s;
+        float y0 = su - bh * DLG_SUS * s, y1 = su + inalt + bh * DLG_JOS * s;
+
+        int cx = Math.round(bw * DLG_COLT_X), cy = Math.round(bh * DLG_COLT_Y);
+        float dcx = cx * s, dcy = cy * s;
+        int bSt = Math.round(bw * DLG_BANDA_ST), bDr = Math.round(bw * DLG_BANDA_DR);
+        float mijloc = (x0 + x1) / 2f, dBanda = (bDr - bSt) * s;
+
+        // randul de sus: colt, latura, banda (fixa, centrata), latura, colt
+        bucata(b, 0, 0, cx, cy,             x0, y0, x0 + dcx, y0 + dcy);
+        bucata(b, cx, 0, bSt, cy,           x0 + dcx, y0, mijloc - dBanda / 2f, y0 + dcy);
+        bucata(b, bSt, 0, bDr, cy,          mijloc - dBanda / 2f, y0, mijloc + dBanda / 2f, y0 + dcy);
+        bucata(b, bDr, 0, bw - cx, cy,      mijloc + dBanda / 2f, y0, x1 - dcx, y0 + dcy);
+        bucata(b, bw - cx, 0, bw, cy,       x1 - dcx, y0, x1, y0 + dcy);
+        // laturile stanga si dreapta
+        bucata(b, 0, cy, cx, bh - cy,       x0, y0 + dcy, x0 + dcx, y1 - dcy);
+        bucata(b, bw - cx, cy, bw, bh - cy, x1 - dcx, y0 + dcy, x1, y1 - dcy);
+        // randul de jos
+        bucata(b, 0, bh - cy, cx, bh,       x0, y1 - dcy, x0 + dcx, y1);
+        bucata(b, cx, bh - cy, bw - cx, bh, x0 + dcx, y1 - dcy, x1 - dcx, y1);
+        bucata(b, bw - cx, bh - cy, bw, bh, x1 - dcx, y1 - dcy, x1, y1);
+    }
+
+    private void bucata(Bitmap b, int sx0, int sy0, int sx1, int sy1,
+                        float dx0, float dy0, float dx1, float dy1) {
+        if (dx1 - dx0 < 0.5f || dy1 - dy0 < 0.5f) return;
+        sursa.set(sx0, sy0, sx1, sy1);
+        tinta.set(dx0, dy0, dx1, dy1);
+        canvas.drawBitmap(b, sursa, tinta, paintRama);
     }
 
     private void redaCerc(int i) {

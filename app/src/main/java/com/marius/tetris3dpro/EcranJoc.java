@@ -646,8 +646,7 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         ui.textCentrat(titlu, 0.5f, 0.24f, 0.065f, argb(a, culT));
 
         float y = 0.33f;
-        ui.panou(0.14f, y - 0.02f, 0.72f, 0.31f, argb(0.75f * a, 0x0B1020), 0.02f);
-        ui.chenar(0.14f, y - 0.02f, 0.72f, 0.31f, argb(0.6f * a, 0x4DE1FF), 0.02f, 0.0018f);
+        ui.fereastra(0.14f, y - 0.02f, 0.72f, 0.31f, argb(0.75f * a, 0x0B1020), argb(0.6f * a, 0x4DE1FF));
 
         if (joc.mod == Setari.MOD_SPRINT) {
             rand(ui, "TIMP", Joc.formatTimp(joc.timp), y + 0.035f, a, recordSprintNou ? 0xFFD84D : 0xFFFFFF);
