@@ -57,6 +57,10 @@ public class CapaUI {
     private static final float DLG_BANDA_ST = 350f / 864f, DLG_BANDA_DR = 513f / 864f;
     private final RectF tinta = new RectF();
 
+    /** cutia pentru HOLD / NEXT (assets/texturi/cutie_piesa.png), alb pe transparent */
+    public Bitmap cutiePiesa;
+    private static final float CUTIE_MARGINE = 45f / 774f;   // de la marginea imaginii la linia neon
+
     private final Paint paintRama = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
     private final Rect sursa = new Rect();
 
@@ -219,6 +223,7 @@ public class CapaUI {
     private static final int C_IMAGINE = 6;
     private static final int C_RAMA = 7;
     private static final int C_DIALOG = 8;
+    private static final int C_CUTIE = 9;
 
     private static final int MAX_COMENZI = 256;
     private final int[] cTip = new int[MAX_COMENZI];
@@ -262,6 +267,7 @@ public class CapaUI {
                 case C_IMAGINE: redaImagine(i); break;
                 case C_RAMA:   redaRama(i); break;
                 case C_DIALOG: redaDialog(i); break;
+                case C_CUTIE:  redaCutie(i); break;
             }
         }
         nrComenzi = 0;
@@ -344,6 +350,14 @@ public class CapaUI {
             chenar(xFrac, yFrac, latFrac, inaltFrac, culoareContur, 0.02f, 0.0018f);
         }
     }
+
+    /** cutie patrata centrata in (xFrac, yFrac); latura liniei neon = laturaFrac din latimea ecranului */
+    public void cutie(float xFrac, float yFrac, float laturaFrac, int culoare) {
+        if (cutiePiesa == null || Color.alpha(culoare) == 0) return;
+        adauga(C_CUTIE, null, xFrac, yFrac, laturaFrac, 0f, 0f, culoare, 0, 0);
+    }
+
+    public boolean areCutie() { return cutiePiesa != null; }
 
     public float latimeTextFrac(String s, float marime) {
         if (canvas == null || s == null) return 0f;
@@ -510,6 +524,18 @@ public class CapaUI {
         bucata(b, 0, bh - cy, cx, bh,       x0, y1 - dcy, x0 + dcx, y1);
         bucata(b, cx, bh - cy, bw - cx, bh, x0 + dcx, y1 - dcy, x1 - dcx, y1);
         bucata(b, bw - cx, bh - cy, bw, bh, x1 - dcx, y1 - dcy, x1, y1);
+    }
+
+    private void redaCutie(int i) {
+        Bitmap b = cutiePiesa;
+        if (b == null) return;
+        int cul = cCul[i];
+        paintRama.setColorFilter(new LightingColorFilter(cul & 0xFFFFFF, 0));
+        paintRama.setAlpha(Color.alpha(cul));
+        float latura = cC[i] * latimePx / (1f - 2f * CUTIE_MARGINE);
+        float cx = cA[i] * latimePx, cy = cB[i] * inaltimePx;
+        tinta.set(cx - latura / 2f, cy - latura / 2f, cx + latura / 2f, cy + latura / 2f);
+        canvas.drawBitmap(b, null, tinta, paintRama);
     }
 
     private void bucata(Bitmap b, int sx0, int sy0, int sx1, int sy1,

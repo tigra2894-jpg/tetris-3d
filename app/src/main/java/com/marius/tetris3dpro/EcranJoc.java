@@ -515,6 +515,37 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
 
     // ---------- desen UI ----------
 
+    /** cutiile din jurul pieselor HOLD / NEXT; aceeasi asezare ca in deseneazaHoldSiNext */
+    private void deseneazaCutii(CapaUI ui, float fade) {
+        if (!ui.areCutie()) return;
+        float s = Math.min(0.55f, latimeVizibila / 30f);
+        float pas = 2.35f * s / 0.55f;
+        boolean ingust = latimeVizibila / 2f - 5.9f < 2.2f;
+        if (ingust) pas = 2.3f * s / 0.55f;
+
+        if (joc.holdPermis) {
+            float a = joc.holdFolosit ? 0.35f : 0.85f;
+            ui.cutie(ecranX(holdX()), ecranY(Y_SUS), pas * 0.98f / latimeVizibila, argb(fade * a, 0xB9C2D6));
+        }
+        if (ingust) {
+            for (int i = 0; i < 4; i++) {
+                float latura = (i == 0 ? 0.98f : 0.9f) * pas;
+                ui.cutie(ecranX(-2.2f + i * pas), ecranY(Y_SUS), latura / latimeVizibila,
+                        argb(fade * (i == 0 ? 0.9f : 0.55f), 0x4DE1FF));
+            }
+        } else {
+            float x = nextX0();
+            int vizibile = Math.min(4, Math.max(2, (int) ((latimeVizibila / 2f - 5.9f) / pas) + 1));
+            // cutia nu intra peste stalpul din dreapta tablei
+            float max = 2f * (x - 5.6f);
+            for (int i = 0; i < vizibile; i++) {
+                float latura = Math.min((i == 0 ? 0.98f : 0.9f) * pas, max);
+                ui.cutie(ecranX(x), ecranY(Y_SUS - i * pas), latura / latimeVizibila,
+                        argb(fade * (i == 0 ? 0.9f : 0.55f), 0x4DE1FF));
+            }
+        }
+    }
+
     private static final int ALB = 0xFFFFFFFF, GRI = 0xFFB9C2D6, CIAN = 0xFF4DE1FF, GALBEN = 0xFFFFD84D,
             ROZ = 0xFFFF5FA8, VERDE = 0xFF7CFF6B, PANOU = 0xC80B1020, PANOU_INCHIS = 0xE0070B18;
 
@@ -522,6 +553,8 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
     public void deseneazaUI(CapaUI ui) {
         boolean ingust = latimeVizibila / 2f - 5.9f < 2.2f;
         float fade = tranzitie;
+
+        deseneazaCutii(ui, fade);
 
         // etichete hold / next
         if (joc.holdPermis)
