@@ -373,7 +373,8 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
             deseneazaPiesaCurenta(r);
         }
         deseneazaHoldSiNext(r);
-        app.particule.deseneaza(r);
+        if (app.texParticula != 0) app.particule.deseneazaScantei(app.scantei);
+        else app.particule.deseneaza(r);
     }
 
     private void deseneazaCadru(Randare r, float[] a) {

@@ -84,5 +84,15 @@ public class Particule {
         }
     }
 
+    /** varianta cu textura particula.png: scantei luminoase in loc de cuburi */
+    public void deseneazaScantei(Scantei sc) {
+        for (int i = 0; i < nr; i++) {
+            float t = viata[i] / viataMax[i];
+            float alfa = Math.min(1f, t * 1.6f);
+            float s = marime[i] * (0.4f + 0.6f * t) * 5f;   // sprite-ul include si stralucirea
+            sc.adauga(x[i], y[i], z[i], s, unghi[i] * 0.25f, r[i], g[i], b[i], alfa);
+        }
+    }
+
     public int numar() { return nr; }
 }
