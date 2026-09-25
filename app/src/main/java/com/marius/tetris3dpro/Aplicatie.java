@@ -19,9 +19,9 @@ public class Aplicatie {
     public Imagine imagine;
 
     // imagini optionale din assets/texturi/ (null daca lipsesc)
-    public final Bitmap imgBloc, imgFundal, imgPanou, imgLogo;
+    public final Bitmap imgBloc, imgFundalJoc, imgFundalMeniu, imgPanou, imgLogo;
     // texturile GL corespunzatoare (0 daca lipsesc); se recreeaza odata cu contextul GL
-    public int texFundal = 0, texPanou = 0;
+    public int texFundalJoc = 0, texFundalMeniu = 0, texPanou = 0;
 
     public float latime = 1f, inaltime = 1f, raport = 0.5f;
     public float timp = 0f;
@@ -48,7 +48,8 @@ public class Aplicatie {
         sunet = new Sunet();
         vibratii = new Vibratii(act);
         imgBloc   = Texturi.citeste(act, "bloc");
-        imgFundal = Texturi.citeste(act, "fundal");
+        imgFundalJoc   = Texturi.citeste(act, "fundal_joc");
+        imgFundalMeniu = Texturi.citeste(act, "fundal_meniu");
         imgPanou  = Texturi.citeste(act, "panou");
         imgLogo   = Texturi.citeste(act, "logo");
         sunet.setPornit(setari.sunetPornit());
@@ -64,7 +65,8 @@ public class Aplicatie {
         ui.pregatesteGL();
         imagine = new Imagine();
         randare.seteazaTexturaBloc(Texturi.incarca(imgBloc));
-        texFundal = Texturi.incarca(imgFundal);
+        texFundalJoc   = Texturi.incarca(imgFundalJoc);
+        texFundalMeniu = Texturi.incarca(imgFundalMeniu);
         texPanou  = Texturi.incarca(imgPanou);
         if (!pornita) {
             pornita = true;
@@ -117,6 +119,10 @@ public class Aplicatie {
 
     public void deseneaza() {
         randare.inceputCadru();
+        // meniurile folosesc fundalul de joc cat timp nu exista fundal_meniu
+        boolean inJoc = ecranCurent == ecranJoc || imgFundalMeniu == null;
+        Bitmap imgFundal = inJoc ? imgFundalJoc : imgFundalMeniu;
+        int texFundal = inJoc ? texFundalJoc : texFundalMeniu;
         if (texFundal != 0) {
             imagine.fundal(texFundal, imgFundal.getWidth(), imgFundal.getHeight(), raport, 0.8f);
         }

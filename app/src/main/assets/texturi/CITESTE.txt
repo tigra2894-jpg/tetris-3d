@@ -2,6 +2,8 @@ Imagini optionale pentru joc. Daca un fisier lipseste, jocul foloseste aspectul
 desenat din cod. Numele sunt fixe; extensia poate fi .png, .jpg sau .webp.
 
   bloc    - fata unui cub (512x512, patrat, nuante de gri; se coloreaza dupa piesa)
-  fundal  - imaginea din spatele jocului si al meniurilor (portret, 1080x1920)
+  fundal_joc   - imaginea din spatele tablei in timpul jocului (portret, 1080x1920)
+  fundal_meniu - imaginea din spatele meniurilor (portret, 1080x1920);
+                 daca lipseste, meniurile folosesc fundal_joc
   panou   - peretele din spatele tablei de joc (portret 1:2, de ex. 512x1024)
   logo    - titlul din meniu, PNG cu fundal transparent (lat, de ex. 1024x400)
