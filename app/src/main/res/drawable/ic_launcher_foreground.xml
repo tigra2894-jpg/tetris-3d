@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- piesa T in perspectiva izometrica -->
+    <group android:translateX="54" android:translateY="56">
+        <!-- fete de sus -->
+        <path android:fillColor="#FF5FD4FF" android:pathData="M-24,-10 L-12,-16 L0,-10 L-12,-4 Z"/>
+        <path android:fillColor="#FF5FD4FF" android:pathData="M-12,-16 L0,-22 L12,-16 L0,-10 Z"/>
+        <path android:fillColor="#FF5FD4FF" android:pathData="M0,-10 L12,-16 L24,-10 L12,-4 Z"/>
+        <path android:fillColor="#FF5FD4FF" android:pathData="M-12,-4 L0,-10 L12,-4 L0,2 Z"/>
+        <!-- fete stanga -->
+        <path android:fillColor="#FF1C7FB8" android:pathData="M-24,-10 L-12,-4 L-12,10 L-24,4 Z"/>
+        <path android:fillColor="#FF1C7FB8" android:pathData="M-12,-4 L0,2 L0,16 L-12,10 Z"/>
+        <!-- fete dreapta -->
+        <path android:fillColor="#FF2FA6E0" android:pathData="M0,2 L12,-4 L12,10 L0,16 Z"/>
+        <path android:fillColor="#FF2FA6E0" android:pathData="M12,-4 L24,-10 L24,4 L12,10 Z"/>
+        <!-- muchii -->
+        <path android:strokeColor="#FFE8FBFF" android:strokeWidth="1.2" android:fillColor="#00000000"
+            android:pathData="M-24,-10 L-12,-16 L0,-22 L12,-16 L24,-10 L12,-4 L0,2 L-12,-4 Z M-12,-4 L-12,10 M0,2 L0,16 M12,-4 L12,10 M-24,-10 L-24,4 L-12,10 L0,16 L12,10 L24,4 L24,-10"/>
+    </group>
+</vector>

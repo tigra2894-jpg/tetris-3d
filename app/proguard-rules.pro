@@ -1,0 +1,1 @@
+-keep class com.marius.tetris3dpro.MainActivity { *; }
