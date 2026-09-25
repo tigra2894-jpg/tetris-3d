@@ -19,6 +19,16 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
     private final Joc joc;
     private int stare = STARE_START;
     private float timpStart = 0f;
+    private float durataStart = 0.9f;
+
+    /** ghidul de gesturi, afisat la START (primele jocuri) si in PAUZA cand butoanele sunt ascunse */
+    private static final String[] GESTURI = {
+        "TRAGE STANGA / DREAPTA = MUTA",
+        "ATINGE STANGA / DREAPTA = ROTESTE",
+        "TRAGE IN JOS = COBOARA",
+        "AZVARLE IN JOS = TRANTESTE",
+        "AZVARLE IN SUS / 2 DEGETE = HOLD"
+    };
     private float timpFinal = 0f;
 
     private float camZ = 40f;
@@ -63,6 +73,8 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         app.particule.goleste();
         stare = STARE_START;
         timpStart = 0f;
+        // la primele 5 jocuri fara butoane, START sta mai mult ca sa se poata citi gesturile
+        durataStart = !app.setari.butoanePornite() && app.setari.jocuriJucate() < 5 ? 3.2f : 0.9f;
         timpJoc = 0f;
         recordNou = false;
         recordSprintNou = false;
@@ -118,7 +130,7 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
 
         if (stare == STARE_START) {
             timpStart += dt;
-            if (timpStart > 0.9f) stare = STARE_JOC;
+            if (timpStart > durataStart) stare = STARE_JOC;
             return;
         }
         if (stare == STARE_PAUZA) return;
@@ -668,9 +680,9 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
     }
 
     private void deseneazaStart(CapaUI ui) {
-        float t = timpStart / 0.9f;
-        float a = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
-        float s = 0.08f + (1f - neted(Math.min(1f, t * 2f))) * 0.06f;
+        float a = timpStart < durataStart - 0.27f ? 1f : Math.max(0f, (durataStart - timpStart) / 0.27f);
+        float s = 0.08f + (1f - neted(Math.min(1f, timpStart / 0.45f))) * 0.06f;
+        if (durataStart > 1f) deseneazaGesturi(ui, ecranY(5.5f), a);
         ui.textCentrat("START", 0.5f, ecranY(10f) + s * 0.35f, s, argb(a, 0xFFFFFF));
         String d = Setari.DESCRIERI_MODURI[joc.mod][0];
         ui.textCentrat(d, 0.5f, ecranY(7.5f), 0.022f, argb(a * 0.85f, 0x4DE1FF));
@@ -682,6 +694,13 @@ public class EcranJoc extends Ecran implements Joc.Ascultator {
         buton(ui, "CONTINUA", 0.445f, 0x2A3350, 0x4DE1FF);
         buton(ui, "RESTART", 0.555f, 0x2A3350, 0xFFD84D);
         buton(ui, "MENIU", 0.665f, 0x2A3350, 0xFF5FA8);
+        if (!app.setari.butoanePornite()) deseneazaGesturi(ui, 0.76f, 1f);
+    }
+
+    private void deseneazaGesturi(CapaUI ui, float y, float a) {
+        ui.panou(0.08f, y - 0.03f, 0.84f, 0.035f * GESTURI.length + 0.025f, argb(a * 0.6f, 0x0B1020), 0.015f);
+        for (int i = 0; i < GESTURI.length; i++)
+            ui.textFin(GESTURI[i], 0.5f, y + i * 0.035f, 0.019f, argb(a * 0.9f, 0xB9C2D6));
     }
 
     private void buton(CapaUI ui, String text, float yc, int fundal, int contur) {

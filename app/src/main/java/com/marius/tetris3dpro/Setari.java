@@ -50,8 +50,9 @@ public class Setari {
     public boolean vibratiePornita()   { return p.getBoolean("vibratie", true); }
     public void setVibratie(boolean v) { p.edit().putBoolean("vibratie", v).apply(); }
 
-    public boolean butoanePornite()    { return p.getBoolean("butoane", true); }
-    public void setButoane(boolean v)  { p.edit().putBoolean("butoane", v).apply(); }
+    // implicit jocul se controleaza doar din gesturi; butoanele se pot porni din SETARI
+    public boolean butoanePornite()    { return p.getBoolean("butoane_ecran", false); }
+    public void setButoane(boolean v)  { p.edit().putBoolean("butoane_ecran", v).apply(); }
 
     public boolean fantomaPornita()    { return p.getBoolean("fantoma", true); }
     public void setFantoma(boolean v)  { p.edit().putBoolean("fantoma", v).apply(); }
